@@ -1,4 +1,3 @@
-@pending_7
 Feature: Pre-filtered vector recall, prefetch lifecycle, and RecallStatus
   Vector recall filters out closed/superseded facts inside the index scan
   before LIMIT k, background prefetch warms the next turn without blocking,

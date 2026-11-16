@@ -1,4 +1,3 @@
-@pending_10
 Feature: Diffable JSON store git workflow, MCP sidecar, and hermes relatedb CLI
   The diffable JSON directory store produces clean git diffs, replays
   idempotently with zero diff, exposes status/verify/mcp CLI subcommands,

@@ -49,6 +49,14 @@ A graph is the natural shape for memory: people, projects, notes and decisions c
 
 Embeddings come from a small [`model2vec`](https://github.com/MinishLab/model2vec) model running on CPU. Apart from a one-time model download from Hugging Face, nothing leaves your machine. There is no hosted service, no API key and no GPU requirement.
 
+### What it does on your machine
+
+- **Network:** downloads the embedding model from Hugging Face the first time it runs. It makes no other network calls and sends no telemetry.
+- **Files:** reads and writes only its store (`memory/` under your Hermes profile, or your `db_path`) and its `memory.relatedb-memory` section of `config.yaml`.
+- **Background work:** one writer thread and short-lived recall and extraction threads inside the Hermes process. It starts no long-running processes.
+- **Shell commands:** only when you run them yourself. `init-diffable` runs `git config` and edits `.gitattributes` in the target repository, and `mcp --launch` starts the `relate` binary.
+- **Credentials:** none.
+
 ### Trade-offs
 
 - `model2vec` embeddings are fast and local but less nuanced than large hosted embedding models.
@@ -61,7 +69,7 @@ Embeddings come from a small [`model2vec`](https://github.com/MinishLab/model2ve
 
 ### Requirements
 
-- Hermes Agent, running on Python 3.12 or newer
+- Hermes Agent 0.23.1 or newer, running on Python 3.12 or newer
 - `jq` (optional, for readable diffs of JSON stores)
 
 ### 1. Install from GitHub

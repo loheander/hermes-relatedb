@@ -1,9 +1,10 @@
 name: relatedb-memory
 version: 0.1.0
 description: Bi-temporal agent memory on RelateDB with local vector recall.
+requires_hermes: ">=0.23.1"
 python_dependencies:
-  - pyyaml>=6.0.3
-  - relate-db>=1.0.1
-  - model2vec>=0.3
+  - pyyaml>=6.0.1,<7
+  - relate-db>=1.0.1,<2
+  - model2vec>=0.3.2,<1
 config_keys:
   - memory.relatedb-memory

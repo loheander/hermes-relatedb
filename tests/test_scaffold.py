@@ -58,3 +58,16 @@ def test_manifest():
 def test_internal_layout():
     for m in ("provider", "config", "store", "embedder", "schema"):
         assert (ROOT / "relatedb_memory" / f"{m}.py").is_file()
+
+
+def test_register_cli_sets_dispatcher_on_hermes_parser():
+    """Hermes passes register_cli its own parser and dispatches via ``args.func``."""
+    import argparse
+
+    import cli
+
+    parser = argparse.ArgumentParser(prog="hermes relatedb")
+    cli.register_cli(parser)
+    args = parser.parse_args(["status", "--path", "/nonexistent"])
+    assert args.func is cli.relatedb_command
+    assert args._handler is cli._cmd_status

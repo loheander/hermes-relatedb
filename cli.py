@@ -171,7 +171,12 @@ def _cmd_cypher(args: argparse.Namespace) -> int:
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
-    """Register ``relatedb`` subcommands onto the ``hermes relatedb`` parser Hermes hands us."""
+    """Register subcommands onto the ``hermes relatedb`` parser Hermes hands us.
+
+    Hermes looks for a handler named ``<provider>_command``, which is not a valid Python
+    name when the provider name has a hyphen, so the dispatcher is set on the parser here.
+    """
+    parser.set_defaults(func=relatedb_command)
     subparser = parser.add_subparsers(dest="subcommand", required=True)
     p_init = subparser.add_parser("init-diffable", help="Initialize a diffable JSON RelateDB store")
     p_init.add_argument("path", nargs="?", default="./memory", help="Target store directory (default: ./memory)")

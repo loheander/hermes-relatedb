@@ -1,4 +1,4 @@
-"""Scenarios tagged ``@pending_4``, ``@pending_6``, ``@pending_7``, or ``@pending_8`` are strict xfails until their story lands.
+"""Scenarios tagged ``@pending_4``, ``@pending_6``, ``@pending_7``, ``@pending_8``, or ``@pending_9`` are strict xfails until their story lands.
 
 Each implementing story removes its tag from the feature file, so a premature
 pass fails the suite instead of going unnoticed.
@@ -19,3 +19,5 @@ def pytest_collection_modifyitems(items):
             item.add_marker(pytest.mark.xfail(strict=True, reason="Pending #7"))
         if item.get_closest_marker("pending_8"):
             item.add_marker(pytest.mark.xfail(strict=True, reason="Pending #8"))
+        if item.get_closest_marker("pending_9"):
+            item.add_marker(pytest.mark.xfail(strict=True, reason="Pending #9"))

@@ -1,0 +1,5 @@
+name: relatedb
+version: 0.1.0
+description: Bi-temporal agent memory on RelateDB with local vector recall.
+config_keys:
+  - memory.relatedb

@@ -32,3 +32,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+markers = [
+    "pending_4: acceptance scenario awaiting the store engine (#4); strict xfail",
+]

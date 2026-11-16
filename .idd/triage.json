@@ -1,50 +1,9 @@
 {
   "version": 1,
-  "updated": "2026-11-16T09:46:45Z",
+  "updated": "2026-11-16T09:57:47Z",
   "source": "/auto-pilot",
-  "analyzed_count": 15,
+  "analyzed_count": 13,
   "issues": [
-    {
-      "number": 2,
-      "title": "Dogfood RelateDB codebase-context graph in a git-tracked directory store for repo ADRs and specs",
-      "type": "feature",
-      "priority": "P3",
-      "blocks": [],
-      "blocked_by": [],
-      "status": "ready",
-      "stale_days": null,
-      "labels": [
-        "documentation",
-        "story"
-      ],
-      "affected_files": [
-        "tools/index_specs.py"
-      ],
-      "updated_at": "2026-11-15T15:08:58Z",
-      "potentially_fixed_by": null
-    },
-    {
-      "number": 3,
-      "title": "Profile-scoped configuration, config_schema.py, and store path resolution",
-      "type": "feature",
-      "priority": "P2",
-      "blocks": [
-        4,
-        11
-      ],
-      "blocked_by": [],
-      "status": "ready",
-      "stale_days": null,
-      "labels": [
-        "story"
-      ],
-      "affected_files": [
-        "__init__.py",
-        "config_schema.py"
-      ],
-      "updated_at": "2026-11-15T12:32:17Z",
-      "potentially_fixed_by": null
-    },
     {
       "number": 11,
       "title": "Readable E2E acceptance tests for bi-temporal graph schema and thread-affine store engine",
@@ -53,10 +12,8 @@
       "blocks": [
         4
       ],
-      "blocked_by": [
-        3
-      ],
-      "status": "blocked",
+      "blocked_by": [],
+      "status": "ready",
       "stale_days": null,
       "labels": [
         "story"
@@ -78,7 +35,6 @@
         12
       ],
       "blocked_by": [
-        3,
         11
       ],
       "status": "blocked",
@@ -361,7 +317,6 @@
   "summary": {
     "parallel_groups": [
       [
-        2,
         3
       ],
       [
@@ -377,7 +332,6 @@
     "stale_threshold_days": 7,
     "potentially_fixed_count": 0,
     "suggested_order": [
-      2,
       3,
       11,
       4,
@@ -401,6 +355,11 @@
       "time": "2026-11-16T09:46:45Z",
       "source": "/auto-pilot",
       "changes": "Full re-triage (15 issues)"
+    },
+    {
+      "time": "2026-11-16T09:57:47Z",
+      "source": "/auto-pilot",
+      "changes": "Incremental update (#2 resolved)"
     }
   ]
 }

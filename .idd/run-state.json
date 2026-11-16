@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "run_id": "20261116T094619Z-3673532",
+  "started_at": "2026-11-16T09:46:30Z",
+  "updated_at": "2026-11-16T10:14:33Z",
+  "invocation": "/auto-pilot",
+  "mode": "balanced",
+  "limit": 10,
+  "queue": [],
+  "phase": "triage",
+  "lanes": [],
+  "current": null,
+  "processed": [
+    {
+      "issue": 2,
+      "outcome": "merged",
+      "pr": 18
+    },
+    {
+      "issue": 3,
+      "outcome": "merged",
+      "pr": 19
+    },
+    {
+      "issue": 11,
+      "outcome": "left_open",
+      "pr": 20
+    }
+  ],
+  "skip_list": [],
+  "report_path": ".idd/last-run-report.md",
+  "borrowed_skills": []
+}

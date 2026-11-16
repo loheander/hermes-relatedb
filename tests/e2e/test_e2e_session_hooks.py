@@ -6,7 +6,7 @@ text; this module binds each step to ``RelateDBMemoryProvider``.
 The steps pin the contract #8 must implement::
 
     provider.sync_turn(user_message, assistant_response, *, agent_context="primary", ...)
-    provider.on_memory_write(action, content, *, target=..., metadata=...)
+    provider.on_memory_write(action, target, content, metadata=...)
     provider.on_pre_compress(messages)
     provider.on_session_switch(new_session_id, *, reset=False)
     provider.on_delegation(task, result, *, child_session_id=None)
@@ -70,22 +70,22 @@ def non_primary_sync_turns(world):
 
 @when(parsers.parse('on_memory_write "add" records "{content}" in target "{target}"'))
 def memory_write_add(world, content, target):
-    world.provider.on_memory_write("add", content, target=target)
+    world.provider.on_memory_write("add", target, content)
 
 
 @when(parsers.parse('on_memory_write "replace" updates "{target}" to "{content}"'))
 def memory_write_replace(world, target, content):
     world.provider.on_memory_write(
         "replace",
+        target,
         content,
-        target=target,
         metadata={"previous_content": "User prefers vim"},
     )
 
 
 @when(parsers.parse('on_memory_write "remove" closes "{target}"'))
 def memory_write_remove(world, target):
-    world.provider.on_memory_write("remove", "", target=target)
+    world.provider.on_memory_write("remove", target, "")
 
 
 @when("on_pre_compress runs on messages about to be truncated")

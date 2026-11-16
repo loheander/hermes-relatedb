@@ -460,9 +460,8 @@ class RelateDBMemoryProvider(_Base):
     def on_memory_write(
         self,
         action: str,
+        target: str = "memory/default",
         content: str = "",
-        *,
-        target: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
         if self._config is None:

@@ -5,8 +5,11 @@ from __future__ import annotations
 import importlib.util
 import shutil
 import threading
+import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -79,6 +82,13 @@ _STATIC_SYSTEM_PROMPT = (
 )
 
 
+_NON_PRIMARY_CONTEXTS = frozenset({"subagent", "cron", "flush"})
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _is_trivial_prompt(query: str) -> bool:
     if _hermes_is_trivial_prompt is not None:
         return bool(_hermes_is_trivial_prompt(query))
@@ -122,13 +132,16 @@ class RelateDBMemoryProvider(_Base):
 
     def __init__(self) -> None:
         self._session_id: str | None = None
+        self._agent_context: str = "primary"
         self._init_kwargs: dict[str, Any] = {}
         self._config: _config.RelateDBConfig | None = None
         self._embedder: Embedder | None = None
         self._store: RelateStore | None = None
         self._prefetch_lock = threading.Lock()
+        self._sync_lock = threading.Lock()
         self._store_lock = threading.Lock()
         self._prefetch_thread: threading.Thread | None = None
+        self._sync_threads: list[threading.Thread] = []
         self._prefetch_cache: tuple[str, list[dict[str, Any]]] | None = None
         self._last_recall_status: RecallStatus | None = None
 
@@ -178,6 +191,7 @@ class RelateDBMemoryProvider(_Base):
 
     def initialize(self, session_id: str, **kwargs: Any) -> None:
         self._session_id = session_id
+        self._agent_context = str(kwargs.get("agent_context", "primary"))
         self._init_kwargs = dict(kwargs)
         hermes_home = kwargs.get("hermes_home")
         embedder = kwargs.get("embedder")
@@ -257,8 +271,176 @@ class RelateDBMemoryProvider(_Base):
     def recall_status(self) -> RecallStatus | None:
         return self._last_recall_status
 
+    def sync_turn(
+        self,
+        user_content: str,
+        assistant_content: str,
+        *,
+        session_id: str | None = None,
+        agent_context: str | None = None,
+        messages: Any = None,
+        turn_author: str | None = None,
+    ) -> None:
+        ctx = agent_context if agent_context is not None else self._agent_context
+        if ctx in _NON_PRIMARY_CONTEXTS or ctx != "primary":
+            return
+        if self._config is None or not self._config.auto_extract:
+            return
+        if not (user_content or "").strip() and not (assistant_content or "").strip():
+            return
+
+        store = self._ensure_store()
+        embedder = self._embedder
+        if embedder is None:
+            return
+        active_session = session_id or self._session_id or "default"
+        now = _utc_now_iso()
+        uid = uuid.uuid4().hex[:12]
+        combined = f"User: {user_content}\nAssistant: {assistant_content}".strip()
+
+        def _worker() -> None:
+            _ = store.active_slots()
+            store.record_episode(
+                episode_id=f"ep-{uid}",
+                session=active_session,
+                kind="message",
+                at=now,
+                text=combined,
+            )
+            store.record_fact(
+                fact_id=f"f-{uid}",
+                text=user_content.strip() or assistant_content.strip(),
+                slot=f"turn/{active_session}/{uid}",
+                valid_from=now,
+                recorded_at=now,
+                episode_id=f"ep-{uid}",
+                embedding=embedder.embed_one(combined),
+            )
+
+        thread = _spawn_bg(_worker, name="relatedb-sync-turn")
+        with self._sync_lock:
+            self._sync_threads = [t for t in self._sync_threads if t.is_alive()]
+            self._sync_threads.append(thread)
+
+    def flush_sync(self, timeout: float | None = 5.0) -> None:
+        with self._sync_lock:
+            threads = list(self._sync_threads)
+            self._sync_threads.clear()
+        for thread in threads:
+            if thread.is_alive():
+                thread.join(timeout=timeout)
+
+    def on_memory_write(
+        self,
+        action: str,
+        content: str = "",
+        *,
+        target: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        if self._config is None:
+            return
+        store = self._ensure_store()
+        embedder = self._embedder
+        slot = target or "memory/default"
+        now = _utc_now_iso()
+        uid = uuid.uuid4().hex[:12]
+        active_session = self._session_id or "default"
+
+        store.record_episode(
+            episode_id=f"ep-mw-{uid}",
+            session=active_session,
+            kind="memory_write",
+            at=now,
+            text=f"{action} {slot}: {content}".strip(),
+        )
+        normalized_action = action.strip().lower()
+        if normalized_action in {"add", "replace", "patch"}:
+            vec = embedder.embed_one(content) if embedder is not None else None
+            store.record_fact(
+                fact_id=f"f-mw-{uid}",
+                text=content,
+                slot=slot,
+                valid_from=now,
+                recorded_at=now,
+                episode_id=f"ep-mw-{uid}",
+                embedding=vec,
+            )
+        elif normalized_action == "remove":
+            store.retract_slot(slot=slot, valid_to=now, closed_at=now)
+        else:
+            raise ValueError(f"Unsupported memory_write action: {action!r}")
+
+    def on_pre_compress(self, messages: Sequence[dict[str, Any]]) -> None:
+        self.flush_sync(timeout=2.0)
+        if self._config is None or not messages:
+            return
+        store = self._ensure_store()
+        embedder = self._embedder
+        now = _utc_now_iso()
+        uid = uuid.uuid4().hex[:12]
+        active_session = self._session_id or "default"
+        summary_lines = [
+            f"{m.get('role', 'unknown')}: {m.get('content', '')}"
+            for m in messages
+            if m.get("content")
+        ]
+        if not summary_lines:
+            return
+        summary = "\n".join(summary_lines)
+        store.record_episode(
+            episode_id=f"ep-pc-{uid}",
+            session=active_session,
+            kind="pre_compress",
+            at=now,
+            text=summary,
+        )
+        vec = embedder.embed_one(summary) if embedder is not None else None
+        store.record_fact(
+            fact_id=f"f-pc-{uid}",
+            text=summary_lines[0],
+            slot=f"pre_compress/{active_session}/{uid}",
+            valid_from=now,
+            recorded_at=now,
+            episode_id=f"ep-pc-{uid}",
+            embedding=vec,
+        )
+
+    def on_session_switch(self, new_session_id: str, *, reset: bool = False) -> None:
+        if reset:
+            self.flush_sync(timeout=2.0)
+            self.flush_prefetch(timeout=2.0)
+            with self._prefetch_lock:
+                self._prefetch_cache = None
+            self._last_recall_status = None
+        self._session_id = new_session_id
+
+    def on_delegation(
+        self,
+        task: str,
+        result: str,
+        *,
+        child_session_id: str | None = None,
+    ) -> None:
+        if self._config is None:
+            return
+        store = self._ensure_store()
+        now = _utc_now_iso()
+        uid = uuid.uuid4().hex[:12]
+        active_session = self._session_id or "default"
+        mentions = [child_session_id] if child_session_id else []
+        store.record_episode(
+            episode_id=f"ep-del-{uid}",
+            session=active_session,
+            kind="delegation",
+            at=now,
+            text=f"Task: {task}\nResult: {result}",
+            mentions=mentions,
+        )
+
     def shutdown(self) -> None:
         self.flush_prefetch(timeout=2.0)
+        self.flush_sync(timeout=2.0)
         if self._store is not None:
             self._store.close()
             self._store = None

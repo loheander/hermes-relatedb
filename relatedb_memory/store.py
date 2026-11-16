@@ -352,6 +352,47 @@ class RelateStore:
         )
         return [row["slot"] for row in rows]
 
+    def vector_recall(
+        self,
+        query_vector: Sequence[float],
+        *,
+        k: int = 8,
+    ) -> list[dict[str, Any]]:
+        """Run pre-filtered vector recall over open facts (``closedAt IS NULL``)."""
+        if isinstance(k, bool) or not isinstance(k, int) or k < 1:
+            raise ValueError(f"k must be a positive integer, got {k!r}")
+        vec = format_vector(query_vector, expected_dim=self._embedding_dim)
+        rows = self.run(
+            "MATCH (f:Fact) "
+            "SEARCH f IN (VECTOR INDEX fact_embedding FOR vector($q, $dim, FLOAT32) "
+            "WHERE f.closedAt IS NULL LIMIT $k) SCORE AS score "
+            "MATCH (f)-[:FROM]->(ep:Episode) "
+            "RETURN f.id AS id, f.text AS text, f.slot AS slot, round(score, 4) AS score, "
+            "COLLECT { MATCH (f)-[:ABOUT]->(e:Entity) RETURN e.key ORDER BY e.key } AS about, "
+            "ep.id AS ep_id, ep.kind AS ep_kind, ep.text AS ep_text, "
+            "COLLECT { MATCH (f)-[:SUPERSEDES]->(old:Fact) RETURN old.text } AS replaced "
+            "ORDER BY score DESC",
+            q=vec,
+            dim=self._embedding_dim,
+            k=k,
+        )
+        return [
+            {
+                "id": row["id"],
+                "text": row["text"],
+                "slot": row["slot"],
+                "score": row["score"],
+                "about": row["about"],
+                "learnedFrom": {
+                    "id": row["ep_id"],
+                    "kind": row["ep_kind"],
+                    "text": row["ep_text"],
+                },
+                "replaced": row["replaced"],
+            }
+            for row in rows
+        ]
+
     def close(self, timeout: float | None = None) -> None:
         """Flush pending operations and close the connection on its owning thread."""
         with self._state_lock:

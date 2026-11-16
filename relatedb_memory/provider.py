@@ -4,16 +4,33 @@ from __future__ import annotations
 
 import importlib.util
 import shutil
+import threading
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from . import config as _config
+from .embedder import Embedder, get_embedder
+from .store import RelateStore
 
 
 try:  # Hermes runtime is optional at import time.
-    from agent.memory_provider import MemoryProvider as _Base
+    from agent.memory_provider import (
+        MemoryProvider as _Base,
+        RecallStatus,
+        is_trivial_prompt as _hermes_is_trivial_prompt,
+        spawn_context_thread as _hermes_spawn_context_thread,
+    )
 except ImportError:  # pragma: no cover - exercised when Hermes is absent
+
+    @dataclass(frozen=True)
+    class RecallStatus:  # type: ignore[no-redef]
+        provider_label: str
+        count: int
+
+    _hermes_is_trivial_prompt = None
+    _hermes_spawn_context_thread = None
 
     class _Base(ABC):  # type: ignore[no-redef]
         """Minimal stand-in so the package imports without Hermes Agent."""
@@ -32,6 +49,74 @@ except ImportError:  # pragma: no cover - exercised when Hermes is absent
         def get_tool_schemas(self) -> list[dict[str, Any]]: ...
 
 
+_TRIVIAL_TOKENS = frozenset(
+    {
+        "ok",
+        "okay",
+        "k",
+        "yes",
+        "no",
+        "thanks",
+        "thank you",
+        "thx",
+        "ty",
+        "hi",
+        "hello",
+        "hey",
+        "bye",
+        "sure",
+        "cool",
+        "great",
+        "nice",
+        "got it",
+    }
+)
+
+_STATIC_SYSTEM_PROMPT = (
+    "RelateDB bi-temporal memory is active. Use `relatedb_remember` to store durable "
+    "facts, `relatedb_recall` to search active memories, `relatedb_as_of` to audit "
+    "historical state, and `relatedb_provenance` to inspect supporting episodes."
+)
+
+
+def _is_trivial_prompt(query: str) -> bool:
+    if _hermes_is_trivial_prompt is not None:
+        return bool(_hermes_is_trivial_prompt(query))
+    stripped = query.strip()
+    if not stripped or stripped.startswith("/"):
+        return True
+    normalized = stripped.rstrip(".!?,").lower()
+    return normalized in _TRIVIAL_TOKENS
+
+
+def _spawn_bg(target: Any, name: str) -> threading.Thread:
+    if _hermes_spawn_context_thread is not None:
+        return _hermes_spawn_context_thread(target=target, name=name, daemon=True)
+    thread = threading.Thread(target=target, name=name, daemon=True)
+    thread.start()
+    return thread
+
+
+def _format_recall_block(hits: list[dict[str, Any]]) -> str:
+    lines = ["[RelateDB Memory]"]
+    for hit in hits:
+        line = f"- {hit['text']}"
+        meta: list[str] = []
+        if hit.get("slot"):
+            meta.append(f"slot={hit['slot']}")
+        if hit.get("about"):
+            meta.append(f"about={','.join(hit['about'])}")
+        learned = hit.get("learnedFrom") or {}
+        if learned.get("kind"):
+            meta.append(f"from={learned['kind']}")
+        if hit.get("replaced"):
+            meta.append(f"replaces={'; '.join(hit['replaced'])}")
+        if meta:
+            line += f" ({'; '.join(meta)})"
+        lines.append(line)
+    return "\n".join(lines)
+
+
 class RelateDBMemoryProvider(_Base):
     """Per-instance state only; no module-level mutable profile state."""
 
@@ -39,6 +124,13 @@ class RelateDBMemoryProvider(_Base):
         self._session_id: str | None = None
         self._init_kwargs: dict[str, Any] = {}
         self._config: _config.RelateDBConfig | None = None
+        self._embedder: Embedder | None = None
+        self._store: RelateStore | None = None
+        self._prefetch_lock = threading.Lock()
+        self._store_lock = threading.Lock()
+        self._prefetch_thread: threading.Thread | None = None
+        self._prefetch_cache: tuple[str, list[dict[str, Any]]] | None = None
+        self._last_recall_status: RecallStatus | None = None
 
     @property
     def name(self) -> str:
@@ -68,12 +160,108 @@ class RelateDBMemoryProvider(_Base):
             raise RuntimeError("relatedb provider not initialized with hermes_home")
         return self._config
 
+    def _ensure_store(self) -> RelateStore:
+        with self._store_lock:
+            if self._store is None:
+                if self._config is None:
+                    raise RuntimeError("relatedb store not initialized with hermes_home")
+                embedder = self._embedder
+                if embedder is None:
+                    embedder = get_embedder(self._config.embedding_model)
+                    self._embedder = embedder
+                self._store = RelateStore.open(self._config, embedding_dim=embedder.dim)
+            return self._store
+
+    @property
+    def store(self) -> RelateStore:
+        return self._ensure_store()
+
     def initialize(self, session_id: str, **kwargs: Any) -> None:
         self._session_id = session_id
         self._init_kwargs = dict(kwargs)
         hermes_home = kwargs.get("hermes_home")
+        embedder = kwargs.get("embedder")
         # Bind strictly to the profile Hermes passes in; never fall back to ~/.hermes.
         self._config = _config.resolve_config(hermes_home) if hermes_home else None
+        self._embedder = embedder
+        if self._config is not None and self._embedder is None:
+            self._embedder = get_embedder(self._config.embedding_model)
+
+    def system_prompt_block(self) -> str:
+        return _STATIC_SYSTEM_PROMPT
+
+    def queue_prefetch(self, query: str, session_id: str | None = None) -> None:
+        if self._config is None:
+            return
+        if _is_trivial_prompt(query):
+            with self._prefetch_lock:
+                self._prefetch_cache = None
+            return
+
+        store = self._ensure_store()
+        embedder = self._embedder
+        if embedder is None:
+            return
+        top_k = self._config.prefetch_top_k
+
+        def _worker() -> None:
+            try:
+                vec = embedder.embed_one(query)
+                hits = store.vector_recall(vec, k=top_k)
+            except Exception:
+                return
+            with self._prefetch_lock:
+                self._prefetch_cache = (query, hits)
+
+        with self._prefetch_lock:
+            self._prefetch_thread = _spawn_bg(_worker, name="relatedb-prefetch")
+
+    def flush_prefetch(self, timeout: float | None = 5.0) -> None:
+        with self._prefetch_lock:
+            thread = self._prefetch_thread
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=timeout)
+
+    def prefetch(self, query: str, session_id: str | None = None) -> str:
+        if _is_trivial_prompt(query):
+            self._last_recall_status = None
+            return ""
+        if self._config is None:
+            self._last_recall_status = None
+            return ""
+
+        store = self._ensure_store()
+        embedder = self._embedder
+        if embedder is None:
+            self._last_recall_status = None
+            return ""
+
+        self.flush_prefetch(timeout=2.0)
+        hits: list[dict[str, Any]] | None = None
+        with self._prefetch_lock:
+            if self._prefetch_cache is not None and self._prefetch_cache[0] == query:
+                hits = self._prefetch_cache[1]
+                self._prefetch_cache = None
+
+        if hits is None:
+            vec = embedder.embed_one(query)
+            hits = store.vector_recall(vec, k=self._config.prefetch_top_k)
+
+        if not hits:
+            self._last_recall_status = None
+            return ""
+
+        self._last_recall_status = RecallStatus(provider_label="relatedb", count=len(hits))
+        return _format_recall_block(hits)
+
+    def recall_status(self) -> RecallStatus | None:
+        return self._last_recall_status
+
+    def shutdown(self) -> None:
+        self.flush_prefetch(timeout=2.0)
+        if self._store is not None:
+            self._store.close()
+            self._store = None
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         return []

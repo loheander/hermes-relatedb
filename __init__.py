@@ -18,4 +18,4 @@ def register(ctx) -> None:
     register_skill = getattr(ctx, "register_skill", None)
     skill_path = Path(__file__).resolve().parent / "skills" / "relatedb-memory" / "SKILL.md"
     if callable(register_skill) and skill_path.is_file():
-        register_skill(str(skill_path))
+        register_skill("relatedb-memory", skill_path)

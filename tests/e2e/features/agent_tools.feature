@@ -1,4 +1,3 @@
-@pending_9
 Feature: Agent memory tools (remember, recall, as-of, provenance, cypher)
   The provider exposes tool schemas and handles tool calls for remembering,
   recalling, forgetting, auditing bi-temporal state (trueOn vs believedOn),

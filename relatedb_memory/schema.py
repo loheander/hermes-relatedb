@@ -24,6 +24,10 @@ VECTOR_INDEX_TEMPLATE = (
 )
 
 
+class DimensionMismatchError(ValueError):
+    """Raised when the configured embedding dimension differs from the store's vector index."""
+
+
 def validate_embedding_dim(embedding_dim: int) -> int:
     """Validate that ``embedding_dim`` is a positive integer."""
     if isinstance(embedding_dim, bool) or not isinstance(embedding_dim, int) or embedding_dim < 1:
@@ -41,7 +45,26 @@ def ddl_statements(embedding_dim: int) -> tuple[str, ...]:
     )
 
 
+def get_vector_index_dim(conn: Any, index_name: str = "fact_embedding") -> int | None:
+    """Return the configured ``vector.dimensions`` of ``index_name`` if present."""
+    for row in conn.execute("SHOW INDEXES YIELD *"):
+        if row.get("name") == index_name:
+            config = (row.get("options") or {}).get("indexConfig") or {}
+            dim = config.get("vector.dimensions")
+            if dim is not None:
+                return int(dim)
+    return None
+
+
 def ensure_schema(conn: Any, embedding_dim: int) -> None:
     """Apply all bi-temporal schema constraints and indexes idempotently."""
-    for stmt in ddl_statements(embedding_dim):
+    dim = validate_embedding_dim(embedding_dim)
+    existing_dim = get_vector_index_dim(conn)
+    if existing_dim is not None and existing_dim != dim:
+        raise DimensionMismatchError(
+            f"Vector index 'fact_embedding' has dimension {existing_dim}, "
+            f"but embedder/config specifies {dim}. Re-create the store or configure "
+            f"embedding_model to match {existing_dim}-dim embeddings."
+        )
+    for stmt in ddl_statements(dim):
         conn.execute(stmt)

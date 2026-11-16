@@ -1,33 +1,31 @@
 {
   "version": 1,
-  "run_id": "20261116T094619Z-3673532",
-  "started_at": "2026-11-16T09:46:30Z",
-  "updated_at": "2026-11-16T10:14:33Z",
+  "run_id": "20261116T120949Z-3728079",
+  "started_at": "2026-11-16T12:10:07Z",
+  "updated_at": "2026-11-16T12:17:20Z",
   "invocation": "/auto-pilot",
   "mode": "balanced",
   "limit": 10,
-  "queue": [],
+  "queue": [
+    16,
+    10
+  ],
   "phase": "triage",
   "lanes": [],
   "current": null,
   "processed": [
     {
-      "issue": 2,
+      "issue": 16,
       "outcome": "merged",
-      "pr": 18
+      "pr": 31
     },
     {
-      "issue": 3,
+      "issue": 10,
       "outcome": "merged",
-      "pr": 19
-    },
-    {
-      "issue": 11,
-      "outcome": "left_open",
-      "pr": 20
+      "pr": 32
     }
   ],
   "skip_list": [],
-  "report_path": ".idd/last-run-report.md",
+  "report_path": null,
   "borrowed_skills": []
 }

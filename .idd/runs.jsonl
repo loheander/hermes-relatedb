@@ -1,3 +1,15 @@
 {"ts":"2026-11-16T09:54:33Z","issue":2,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"outcome":"merged","pr":18,"verification":"full","duration_s":360,"skill_version":"2.10.2"}
 {"ts":"2026-11-16T10:07:49Z","issue":3,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"outcome":"merged","pr":19,"verification":"full","duration_s":900,"skill_version":"2.10.2"}
 {"ts":"2026-11-16T10:20:00Z","issue":11,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"outcome":"left_open","pr":20,"verification":"full","duration_s":600,"skill_version":"2.10.2"}
+{"ts":"2026-11-16T10:56:29Z","issue":4,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":21,"verification":"full"}
+{"ts":"2026-11-16T10:59:35Z","issue":5,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":22,"verification":"full"}
+{"ts":"2026-11-16T11:02:04Z","issue":12,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":23,"verification":"full"}
+{"ts":"2026-11-16T11:04:33Z","issue":6,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":24,"verification":"full"}
+{"ts":"2026-11-16T11:06:41Z","issue":13,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":25,"verification":"full"}
+{"ts":"2026-11-16T11:09:29Z","issue":7,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":26,"verification":"full"}
+{"ts":"2026-11-16T11:11:39Z","issue":14,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":27,"verification":"full"}
+{"ts":"2026-11-16T11:14:02Z","issue":8,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":28,"verification":"full"}
+{"ts":"2026-11-16T11:16:30Z","issue":15,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":29,"verification":"full"}
+{"ts":"2026-11-16T11:19:39Z","issue":9,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":30,"verification":"full"}
+{"ts":"2026-11-16T12:14:23Z","issue":16,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":31,"verification":"full"}
+{"ts":"2026-11-16T12:17:20Z","issue":10,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":32,"verification":"full"}

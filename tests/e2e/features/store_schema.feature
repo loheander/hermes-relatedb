@@ -1,4 +1,3 @@
-@pending_4
 Feature: Bi-temporal schema and thread-affine store
   The memory store is an embedded Relate database, one per Hermes profile.
   It bootstraps its own schema, survives re-opening, and can be used from

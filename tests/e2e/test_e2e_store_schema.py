@@ -134,6 +134,18 @@ def populated_closed_store(world):
     store.close()
 
 
+@given("the main profile has a populated store that has been closed")
+def main_profile_populated(world):
+    populated_closed_store(world)
+    world.main_keys = {"ada"}
+
+
+@given(parsers.parse('a profile "{name}" with no memory store'))
+def named_profile_without_store(world, name):
+    home = new_profile(world, name)
+    assert not store_path(home).exists()
+
+
 @given("an open store")
 def an_open_store(world):
     world.store = open_store(new_profile(world))
@@ -165,6 +177,11 @@ def two_profiles_with_stores(world, first, second):
 @when("the profile's store is opened")
 def open_profile_store(world):
     world.store = open_store(default_home(world))
+
+
+@when(parsers.parse('the store of profile "{name}" is opened'))
+def open_named_profile_store(world, name):
+    world.stores[name] = open_store(world.homes[name])
 
 
 @when("the store is opened again")
@@ -213,8 +230,8 @@ def import_store_module(world):
 # -- Then ---------------------------------------------------------------------
 
 
-@then(parsers.parse('the store file exists at "<hermes_home>/{name}"'))
-def store_file_exists(world, name):
+@then(parsers.parse('the store file is "{name}" inside that profile\'s own hermes home'))
+def store_file_in_profile_home(world, name):
     home = default_home(world)
     assert store_path(home) == home / name
     assert store_path(home).exists()
@@ -260,6 +277,27 @@ def entity_and_episode_preserved(world, key, episode):
         key=key,
     )
     assert [row["id"] for row in linked] == [episode]
+
+
+@then(parsers.parse('the store file is created inside the "{name}" profile\'s own hermes home'))
+def named_store_created_in_own_home(world, name):
+    home = world.homes[name]
+    assert store_path(home) == home / "memory.rl"
+    assert store_path(home).exists()
+
+
+@then(parsers.parse('the "{name}" store is a different file from the main store'))
+def named_store_differs_from_main(world, name):
+    assert store_path(world.homes[name]) != store_path(default_home(world))
+
+
+@then("the main store still holds exactly its original data")
+def main_store_untouched(world):
+    main = open_store(default_home(world))
+    try:
+        assert remembered_keys(main) == world.main_keys
+    finally:
+        main.close()
 
 
 @then("no thread raised an error")

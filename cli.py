@@ -11,6 +11,12 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+# Hermes loads this file from the plugin directory without putting that directory on
+# sys.path, so make the bundled ``relatedb_memory`` package importable.
+_PLUGIN_DIR = str(Path(__file__).resolve().parent)
+if _PLUGIN_DIR not in sys.path:
+    sys.path.append(_PLUGIN_DIR)
+
 
 def _resolve_store_path(raw_path: str | None) -> Path:
     if raw_path:
@@ -164,8 +170,9 @@ def _cmd_cypher(args: argparse.Namespace) -> int:
     return 0
 
 
-def register_cli(subparser: argparse._SubParsersAction[Any]) -> None:
-    """Register ``relatedb`` subcommands onto a Hermes CLI subparser."""
+def register_cli(parser: argparse.ArgumentParser) -> None:
+    """Register ``relatedb`` subcommands onto the ``hermes relatedb`` parser Hermes hands us."""
+    subparser = parser.add_subparsers(dest="subcommand", required=True)
     p_init = subparser.add_parser("init-diffable", help="Initialize a diffable JSON RelateDB store")
     p_init.add_argument("path", nargs="?", default="./memory", help="Target store directory (default: ./memory)")
     p_init.set_defaults(_handler=_cmd_init_diffable)
@@ -192,8 +199,7 @@ def register_cli(subparser: argparse._SubParsersAction[Any]) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hermes relatedb", description="RelateDB memory store CLI")
-    sub = parser.add_subparsers(dest="subcommand", required=True)
-    register_cli(sub)
+    register_cli(parser)
     return parser
 
 

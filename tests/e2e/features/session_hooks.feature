@@ -1,4 +1,3 @@
-@pending_8
 Feature: Turn sync, memory-write mirroring, and pre-compression hooks
   Primary agent turns, built-in memory writes, pre-compression flushes,
   session switches, and delegations update the bi-temporal memory graph

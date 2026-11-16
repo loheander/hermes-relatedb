@@ -9,7 +9,7 @@ Feature: Bi-temporal schema and thread-affine store
   Scenario: A fresh profile store bootstraps the bi-temporal schema
     Given a profile with no memory store
     When the profile's store is opened
-    Then the store file is "memory.rl" inside that profile's own hermes home
+    Then the store directory is "memory" inside that profile's own hermes home
     And the uniqueness constraints entity_key, episode_id and fact_id exist
     And facts are indexed by slot with a range index
     And facts are indexed by embedding with a vector index scoped by closedAt

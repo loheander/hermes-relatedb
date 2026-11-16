@@ -230,11 +230,11 @@ def import_store_module(world):
 # -- Then ---------------------------------------------------------------------
 
 
-@then(parsers.parse('the store file is "{name}" inside that profile\'s own hermes home'))
-def store_file_in_profile_home(world, name):
+@then(parsers.parse('the store directory is "{name}" inside that profile\'s own hermes home'))
+def store_dir_in_profile_home(world, name):
     home = default_home(world)
     assert store_path(home) == home / name
-    assert store_path(home).exists()
+    assert store_path(home).is_dir()
 
 
 @then("the uniqueness constraints entity_key, episode_id and fact_id exist")
@@ -282,7 +282,7 @@ def entity_and_episode_preserved(world, key, episode):
 @then(parsers.parse('the store file is created inside the "{name}" profile\'s own hermes home'))
 def named_store_created_in_own_home(world, name):
     home = world.homes[name]
-    assert store_path(home) == home / "memory.rl"
+    assert store_path(home) == home / "memory"
     assert store_path(home).exists()
 
 

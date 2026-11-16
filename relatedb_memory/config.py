@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 SNAPSHOT_FORMATS = ("rl", "parquet", "json")
 DIRECTORY_FORMATS = ("parquet", "json")
 
-DEFAULT_SNAPSHOT_FORMAT = "rl"
+DEFAULT_SNAPSHOT_FORMAT = "parquet"
 DEFAULT_EMBEDDING_MODEL = "minishlab/potion-science-8M"
 DEFAULT_PREFETCH_TOP_K = 8
 DEFAULT_AUTO_EXTRACT = True
@@ -62,6 +62,31 @@ def default_db_path(hermes_home: str | os.PathLike[str], snapshot_format: str) -
     return home / "memory" if snapshot_format in DIRECTORY_FORMATS else home / "memory.rl"
 
 
+def validate_db_path_for_format(
+    db_path: str | os.PathLike[str],
+    snapshot_format: str,
+    *,
+    hermes_home: str | os.PathLike[str] | None = None,
+) -> None:
+    """Ensure ``db_path`` matches ``snapshot_format``: ``.rl`` file for ``rl``, directory for ``json``/``parquet``."""
+    raw = str(db_path).strip()
+    p = Path(raw).expanduser()
+    resolved = (Path(hermes_home).expanduser() / p) if (hermes_home is not None and not p.is_absolute()) else p
+
+    if snapshot_format == "rl":
+        if raw.endswith(("/", "\\")) or p.suffix.lower() != ".rl":
+            raise ValueError(f"db_path must be a file ending in '.rl' when snapshot_format is 'rl', got {raw!r}")
+        if resolved.exists() and resolved.is_dir():
+            raise ValueError(f"db_path must be a file (not an existing directory) when snapshot_format is 'rl', got {raw!r}")
+    elif snapshot_format in DIRECTORY_FORMATS:
+        if p.suffix.lower() == ".rl":
+            raise ValueError(
+                f"db_path must be a directory (not a '.rl' file) when snapshot_format is {snapshot_format!r}, got {raw!r}"
+            )
+        if resolved.exists() and not resolved.is_dir():
+            raise ValueError(
+                f"db_path must be a directory (not an existing file) when snapshot_format is {snapshot_format!r}, got {raw!r}"
+            )
 def _scoped_getter() -> Callable[[str], str | None]:
     try:
         from agent.secret_scope import get_secret
@@ -154,6 +179,7 @@ def resolve_config(
     if path_raw is None:
         db_path = default_db_path(home, fmt)
     else:
+        validate_db_path_for_format(path_raw, fmt, hermes_home=home)
         db_path = Path(str(path_raw).strip()).expanduser()
         if not db_path.is_absolute():
             db_path = home / db_path
@@ -211,6 +237,11 @@ def write_yaml_section(hermes_home: str | os.PathLike[str], values: Mapping[str,
     section = memory.get("relatedb")
     if not isinstance(section, dict):
         section = memory["relatedb"] = {}
+    effective_fmt_raw = clean["snapshot_format"] if "snapshot_format" in clean else section.get("snapshot_format")
+    effective_fmt = DEFAULT_SNAPSHOT_FORMAT if effective_fmt_raw is None else _parse_format(effective_fmt_raw)
+    effective_path = clean["db_path"] if "db_path" in clean else section.get("db_path")
+    if effective_path is not None and str(effective_path).strip() != "":
+        validate_db_path_for_format(effective_path, effective_fmt, hermes_home=hermes_home)
     for key, value in clean.items():
         if value is None:
             section.pop(key, None)

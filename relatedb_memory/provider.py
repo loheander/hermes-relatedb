@@ -746,8 +746,16 @@ class RelateDBMemoryProvider(_Base):
             },
             {
                 "key": "db_path",
-                "description": "Store path (blank: <hermes_home>/memory.rl, or memory/ for directory formats)",
+                "description": "Store path (directory for parquet/json, .rl file for rl)",
                 "default": "",
+                "default_from": {
+                    "field": "snapshot_format",
+                    "map": {
+                        "parquet": "memory/",
+                        "json": "memory/",
+                        "rl": "memory.rl",
+                    },
+                },
             },
             {
                 "key": "embedding_model",

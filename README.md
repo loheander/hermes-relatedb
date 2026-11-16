@@ -20,7 +20,7 @@ Updating a `slot` (for example `project/owner`) closes the active `Fact` and lin
 
 - **In-process graph engine**: `relatedb_memory.store` embeds `relate-db` directly on a dedicated single-writer worker thread with a bounded queue, avoiding subprocess overhead per profile while enforcing RelateDB's single-writer rule.
 - **Local CPU embeddings**: `relatedb_memory.embedder` computes 256-dimensional vectors locally using `model2vec` (`minishlab/potion-science-8M` by default), so personal memory never leaves the machine after the initial model download.
-- **Pluggable storage formats**: Stores persist as a single `.rl` file (default), a Parquet directory, or a git-diffable JSON directory store.
+- **Pluggable storage formats**: Stores persist as a Parquet directory (default), a git-diffable JSON directory store, or a single `.rl` file.
 
 ---
 
@@ -88,8 +88,8 @@ Settings resolve in the following order (highest precedence first):
 
 | Key | Env var | Default | Description |
 | --- | --- | --- | --- |
-| `snapshot_format` | `RELATEDB_SNAPSHOT_FORMAT` | `rl` | Store persistence format: `rl` (single file), `parquet`, or `json` (diffable directory) |
-| `db_path` | `RELATEDB_DB_PATH` | `<hermes_home>/memory.rl` (or `<hermes_home>/memory/` for directory formats) | Store path; relative paths resolve against `hermes_home` |
+| `snapshot_format` | `RELATEDB_SNAPSHOT_FORMAT` | `parquet` | Store persistence format: `parquet` (directory), `json` (diffable directory), or `rl` (single file) |
+| `db_path` | `RELATEDB_DB_PATH` | `<hermes_home>/memory/` (or `<hermes_home>/memory.rl` for `rl`) | Store path; relative paths resolve against `hermes_home` (must be a directory for `parquet`/`json`, or a `.rl` file for `rl`) |
 | `embedding_model` | `RELATEDB_EMBEDDING_MODEL` | `minishlab/potion-science-8M` | `model2vec` model used for local vector recall (256-dim by default) |
 | `prefetch_top_k` | `RELATEDB_PREFETCH_TOP_K` | `8` | Maximum facts injected on turn prefetch |
 | `auto_extract` | `RELATEDB_AUTO_EXTRACT` | `true` | Extract facts from conversation turns in the background |
@@ -99,7 +99,8 @@ Configure these interactively via `hermes memory setup` or the Hermes Dashboard 
 ```yaml
 memory:
   relatedb:
-    snapshot_format: rl
+    snapshot_format: parquet
+    db_path: memory/
     prefetch_top_k: 8
     auto_extract: true
 ```

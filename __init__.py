@@ -1,6 +1,6 @@
 """Hermes memory provider plugin: RelateDB bi-temporal memory.
 
-Hermes loads this directory as a plugin (``$HERMES_HOME/plugins/relatedb``) and
+Hermes loads this directory as a plugin (``$HERMES_HOME/plugins/relatedb-memory``) and
 calls ``register(ctx)``. Importing it must not require Hermes on ``sys.path``.
 """
 

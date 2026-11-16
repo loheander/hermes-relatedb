@@ -1,4 +1,4 @@
-"""Standalone CLI entry point for ``hermes relatedb`` (discovered without importing ``__init__.py``)."""
+"""Standalone CLI entry point for ``hermes relatedb-memory`` (discovered without importing ``__init__.py``)."""
 
 from __future__ import annotations
 
@@ -171,7 +171,7 @@ def _cmd_cypher(args: argparse.Namespace) -> int:
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
-    """Register subcommands onto the ``hermes relatedb`` parser Hermes hands us.
+    """Register subcommands onto the ``hermes relatedb-memory`` parser Hermes hands us.
 
     Hermes looks for a handler named ``<provider>_command``, which is not a valid Python
     name when the provider name has a hyphen, so the dispatcher is set on the parser here.
@@ -203,7 +203,7 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="hermes relatedb", description="RelateDB memory store CLI")
+    parser = argparse.ArgumentParser(prog="hermes relatedb-memory", description="RelateDB memory store CLI")
     register_cli(parser)
     return parser
 

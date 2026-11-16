@@ -15,7 +15,7 @@ def test_register_creates_fresh_instance_each_call(plugin_module, fake_ctx):
     plugin_module.register(fake_ctx)
     a, b = fake_ctx.providers
     assert a is not b
-    assert a.name == "relatedb"
+    assert a.name == "relatedb-memory"
 
 
 def test_instances_do_not_share_profile_state(plugin_module, profile_home):
@@ -50,8 +50,8 @@ def test_discovery_ast_check_passes():
 
 def test_manifest():
     data = yaml.safe_load((ROOT / "plugin.yaml").read_text())
-    assert data["name"] == "relatedb"
-    assert data["config_keys"] == ["memory.relatedb"]
+    assert data["name"] == "relatedb-memory"
+    assert data["config_keys"] == ["memory.relatedb-memory"]
     assert data["version"] and data["description"]
 
 
@@ -66,7 +66,7 @@ def test_register_cli_sets_dispatcher_on_hermes_parser():
 
     import cli
 
-    parser = argparse.ArgumentParser(prog="hermes relatedb")
+    parser = argparse.ArgumentParser(prog="hermes relatedb-memory")
     cli.register_cli(parser)
     args = parser.parse_args(["status", "--path", "/nonexistent"])
     assert args.func is cli.relatedb_command

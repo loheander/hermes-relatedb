@@ -205,11 +205,11 @@ def prefetch_returns_formatted_block(world):
     assert "Ada reviews each relate release" in world.prefetched
 
 
-@then('recall_status reports provider_label "relatedb" with count 1')
+@then('recall_status reports provider_label "relatedb-memory" with count 1')
 def recall_status_reports_count(world):
     status = world.provider.recall_status()
     assert status is not None
-    assert status.provider_label == "relatedb"
+    assert status.provider_label == "relatedb-memory"
     assert status.count == 1
 
 

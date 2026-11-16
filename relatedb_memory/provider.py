@@ -274,7 +274,7 @@ class RelateDBMemoryProvider(_Base):
 
     @property
     def name(self) -> str:
-        return "relatedb"
+        return _config.PROVIDER_NAME
 
     def is_available(self) -> bool:
         """True when the ``relate`` module or CLI is present; never imports it or touches the network."""
@@ -392,7 +392,7 @@ class RelateDBMemoryProvider(_Base):
             self._last_recall_status = None
             return ""
 
-        self._last_recall_status = RecallStatus(provider_label="relatedb", count=len(hits))
+        self._last_recall_status = RecallStatus(provider_label=_config.PROVIDER_NAME, count=len(hits))
         return _format_recall_block(hits)
 
     def recall_status(self) -> RecallStatus | None:

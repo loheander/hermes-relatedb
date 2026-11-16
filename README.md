@@ -72,7 +72,7 @@ You do not need to clone anything. Hermes fetches the plugin straight from GitHu
 hermes plugins install loheander/hermes-relatedb
 ```
 
-Hermes asks before it installs the Python dependencies (`relate-db`, `model2vec`, `pyyaml`). It then asks whether to use `relatedb` as your memory provider. Answer **y**.
+Hermes asks before it installs the Python dependencies (`relate-db`, `model2vec`, `pyyaml`). It then asks whether to use `relatedb-memory` as your memory provider. Answer **y**.
 
 For an unattended install, or to install into a named profile:
 
@@ -86,14 +86,14 @@ hermes -p <profile> plugins install loheander/hermes-relatedb
 If you skipped the prompt, select the provider and configure it:
 
 ```sh
-hermes memory setup relatedb
+hermes memory setup relatedb-memory
 ```
 
 Then confirm that it is active:
 
 ```sh
-hermes memory status     # Provider: relatedb, Status: available
-hermes relatedb status   # store path and fact counts
+hermes memory status            # Provider: relatedb-memory, Status: available
+hermes relatedb-memory status   # store path and fact counts
 ```
 
 New sessions use the new memory. The first session downloads the embedding model.
@@ -101,8 +101,8 @@ New sessions use the new memory. The first session downloads the embedding model
 ### Update or remove
 
 ```sh
-hermes plugins update relatedb
-hermes plugins remove relatedb    # the memory store under your profile is kept
+hermes plugins update relatedb-memory
+hermes plugins remove relatedb-memory   # the memory store under your profile is kept
 ```
 
 ---
@@ -130,10 +130,10 @@ The agent also gets these tools, and the bundled `relatedb-memory` skill teaches
 ### Inspecting memory yourself
 
 ```sh
-hermes relatedb status                 # path, format, node and fact counts
-hermes relatedb verify                 # check that each slot has at most one open fact
-hermes relatedb cypher "MATCH (f:Fact) WHERE f.closedAt IS NULL RETURN f.slot, f.text LIMIT 10"
-hermes relatedb mcp --read-only        # print an MCP client config for the live store
+hermes relatedb-memory status            # path, format, node and fact counts
+hermes relatedb-memory verify            # check that each slot has at most one open fact
+hermes relatedb-memory cypher "MATCH (f:Fact) WHERE f.closedAt IS NULL RETURN f.slot, f.text LIMIT 10"
+hermes relatedb-memory mcp --read-only   # print an MCP client config for the live store
 ```
 
 Every command prints JSON and accepts `--path` to target a store other than the active profile's.
@@ -142,12 +142,12 @@ Every command prints JSON and accepts `--path` to target a store other than the 
 
 ## Configuration
 
-The defaults suit most people. To change them, run `hermes memory setup relatedb` or edit `memory.relatedb` in `<hermes_home>/config.yaml`:
+The defaults suit most people. To change them, run `hermes memory setup relatedb-memory` or edit `memory.relatedb-memory` in `<hermes_home>/config.yaml`:
 
 ```yaml
 memory:
-  provider: relatedb
-  relatedb:
+  provider: relatedb-memory
+  relatedb-memory:
     snapshot_format: parquet   # parquet | json | rl
     db_path: memory/           # relative to the Hermes profile directory
     embedding_model: minishlab/potion-science-8M
@@ -170,7 +170,7 @@ Each key can be overridden with an environment variable: `RELATEDB_SNAPSHOT_FORM
 To track the agent's memory in a git repository with readable diffs:
 
 ```sh
-hermes relatedb init-diffable ./memory
+hermes relatedb-memory init-diffable ./memory
 ```
 
 This creates a JSON store and configures `git diff` to pretty-print it with `jq`. Point `db_path` at that directory and set `snapshot_format: json`.

@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def write_cfg(home: Path, section: dict) -> None:
-    (home / "config.yaml").write_text(yaml.safe_dump({"memory": {"relatedb": section}}))
+    (home / "config.yaml").write_text(yaml.safe_dump({"memory": {"relatedb-memory": section}}))
 
 
 def resolve(home: Path, env: dict | None = None):
@@ -142,11 +142,12 @@ def test_existing_filesystem_type_mismatch_raises(tmp_path):
 
 
 def test_save_config_merges_and_preserves(plugin_module, tmp_path):
-    (tmp_path / "config.yaml").write_text(yaml.safe_dump({"model": "x", "memory": {"provider": "relatedb", "relatedb": {"prefetch_top_k": 4}}}))
+    (tmp_path / "config.yaml").write_text(yaml.safe_dump({"model": "x", "memory": {"provider": "relatedb-memory", "relatedb-memory": {"prefetch_top_k": 4}}}))
     plugin_module.RelateDBMemoryProvider().save_config({"snapshot_format": "json", "prefetch_top_k": "6", "bogus": 1}, str(tmp_path))
     data = yaml.safe_load((tmp_path / "config.yaml").read_text())
-    assert data["model"] == "x" and data["memory"]["provider"] == "relatedb"
-    assert data["memory"]["relatedb"] == {"prefetch_top_k": 6, "snapshot_format": "json"}
+    assert data["model"] == "x" and data["memory"]["provider"] == "relatedb-memory"
+    assert data["memory"]["relatedb-memory"] == {"prefetch_top_k": 6, "snapshot_format": "json"}
+
 
 
 def test_write_config_fields_none_clears_and_creates_file(plugin_module, tmp_path):
@@ -325,7 +326,7 @@ def schema_module(monkeypatch):
 def test_schema_loads_by_path_without_runtime(schema_module):
     before = {m for m in sys.modules if m.startswith("relatedb_memory")}
     schema = schema_module.CONFIG_SCHEMA
-    assert schema.name == "relatedb" and schema.storage == "provider"
+    assert schema.name == "relatedb-memory" and schema.storage == "provider"
     assert {m for m in sys.modules if m.startswith("relatedb_memory")} == before
 
 

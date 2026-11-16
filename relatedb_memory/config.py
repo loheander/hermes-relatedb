@@ -2,7 +2,7 @@
 
 Resolution order, highest first: scoped environment (read through
 ``agent.secret_scope.get_secret`` so one profile never sees another's value
-under multiplexing), the ``memory.relatedb`` mapping in
+under multiplexing), the ``memory.relatedb-memory`` mapping in
 ``<hermes_home>/config.yaml``, then the defaults below. Everything here is a
 pure function of ``hermes_home``; there is no module-level mutable state, so
 providers for different profiles can resolve concurrently.
@@ -30,7 +30,8 @@ DEFAULT_PREFETCH_TOP_K = 8
 DEFAULT_AUTO_EXTRACT = True
 
 CONFIG_FILENAME = "config.yaml"
-CONFIG_SECTION = ("memory", "relatedb")
+PROVIDER_NAME = "relatedb-memory"
+CONFIG_SECTION = ("memory", PROVIDER_NAME)
 
 #: config key -> scoped environment variable
 ENV_VARS = {
@@ -137,7 +138,7 @@ def config_path(hermes_home: str | os.PathLike[str]) -> Path:
 
 
 def read_yaml_section(hermes_home: str | os.PathLike[str]) -> dict[str, Any]:
-    """The ``memory.relatedb`` mapping of ``<hermes_home>/config.yaml`` ({} when absent or invalid)."""
+    """The ``memory.relatedb-memory`` mapping of ``<hermes_home>/config.yaml`` ({} when absent or invalid)."""
     path = config_path(hermes_home)
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -217,7 +218,7 @@ def validate_values(values: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def write_yaml_section(hermes_home: str | os.PathLike[str], values: Mapping[str, Any]) -> None:
-    """Merge validated ``values`` into ``memory.relatedb``, keeping every other key; ``None`` clears a key."""
+    """Merge validated ``values`` into ``memory.relatedb-memory``, keeping every other key; ``None`` clears a key."""
     clean = validate_values(values)
     path = config_path(hermes_home)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -234,9 +235,9 @@ def write_yaml_section(hermes_home: str | os.PathLike[str], values: Mapping[str,
         memory = data["memory"] = {}
     if not isinstance(memory, dict):
         raise ValueError(f"{path}: 'memory' is not a mapping; refusing to overwrite it")
-    section = memory.get("relatedb")
+    section = memory.get(PROVIDER_NAME)
     if not isinstance(section, dict):
-        section = memory["relatedb"] = {}
+        section = memory[PROVIDER_NAME] = {}
     effective_fmt_raw = clean["snapshot_format"] if "snapshot_format" in clean else section.get("snapshot_format")
     effective_fmt = DEFAULT_SNAPSHOT_FORMAT if effective_fmt_raw is None else _parse_format(effective_fmt_raw)
     effective_path = clean["db_path"] if "db_path" in clean else section.get("db_path")

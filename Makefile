@@ -1,6 +1,6 @@
 .PHONY: test sync install setup-git index-specs
 
-PLUGIN_NAME := relatedb
+PLUGIN_NAME := relatedb-memory
 PLUGIN_FILES := plugin.yaml __init__.py config_schema.py cli.py README.md relatedb_memory skills
 
 test:

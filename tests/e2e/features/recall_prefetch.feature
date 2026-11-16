@@ -12,7 +12,7 @@ Feature: Pre-filtered vector recall, prefetch lifecycle, and RecallStatus
     Given an initialized RelateDBMemoryProvider with a stored fact about release reviews
     When queue_prefetch runs for "Who reviews relate releases?" and completes
     Then prefetch returns the formatted "[RelateDB Memory]" block
-    And recall_status reports provider_label "relatedb" with count 1
+    And recall_status reports provider_label "relatedb-memory" with count 1
 
   Scenario: Trivial prompts bypass recall
     Given an initialized RelateDBMemoryProvider with a stored fact about release reviews

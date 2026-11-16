@@ -1,4 +1,4 @@
-"""Dashboard config schema for the relatedb memory provider.
+"""Dashboard config schema for the relatedb-memory provider.
 
 Hermes loads this file by path, so it may import only
 ``plugins.memory.config_schema``. The defaults repeat those in
@@ -17,7 +17,7 @@ from plugins.memory.config_schema import (
 )
 
 CONFIG_SCHEMA = ProviderConfigSchema(
-    name="relatedb",
+    name="relatedb-memory",
     label="RelateDB",
     storage=STORAGE_PROVIDER,
     fields=(

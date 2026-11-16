@@ -1,4 +1,4 @@
-name: relatedb
+name: relatedb-memory
 version: 0.1.0
 description: Bi-temporal agent memory on RelateDB with local vector recall.
 python_dependencies:
@@ -6,4 +6,4 @@ python_dependencies:
   - relate-db>=1.0.1
   - model2vec>=0.3
 config_keys:
-  - memory.relatedb
+  - memory.relatedb-memory

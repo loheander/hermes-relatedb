@@ -124,7 +124,7 @@ def _write_sample_fact(store_dir: Path, fact_id: str, slot: str, text: str) -> N
 # -- When ---------------------------------------------------------------------
 
 
-@when(parsers.parse('hermes relatedb init-diffable is run on "{rel_path}"'))
+@when(parsers.parse('hermes relatedb-memory init-diffable is run on "{rel_path}"'))
 def run_init_diffable(world, rel_path, monkeypatch, capsys):
     import cli
 
@@ -148,7 +148,7 @@ def replay_same_fact(world):
     _write_sample_fact(world.store_dir, "f1", "ada/likes", "Ada likes RelateDB")
 
 
-@when("hermes relatedb status is run")
+@when("hermes relatedb-memory status is run")
 def run_status(world, monkeypatch, capsys):
     import cli
 
@@ -159,7 +159,7 @@ def run_status(world, monkeypatch, capsys):
     world.stderr = captured.err
 
 
-@when("hermes relatedb verify is run")
+@when("hermes relatedb-memory verify is run")
 def run_verify(world, monkeypatch, capsys):
     import cli
 
@@ -192,7 +192,7 @@ def inject_duplicate_open_fact(world, monkeypatch, capsys):
     world.stderr = captured.err
 
 
-@when("hermes relatedb mcp --read-only is run")
+@when("hermes relatedb-memory mcp --read-only is run")
 def run_mcp_readonly(world, monkeypatch, capsys):
     import cli
 

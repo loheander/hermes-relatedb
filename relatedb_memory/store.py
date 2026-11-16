@@ -55,9 +55,10 @@ def _spawn_worker(target: Callable[[], None], name: str) -> threading.Thread:
         from agent.memory_provider import spawn_context_thread
     except ImportError:
         thread = threading.Thread(target=target, name=name, daemon=True)
-        thread.start()
-        return thread
-    return spawn_context_thread(target=target, name=name, daemon=True)
+    else:
+        thread = spawn_context_thread(target=target, name=name, daemon=True)
+    thread.start()
+    return thread
 
 
 def _is_retryable(exc: BaseException) -> bool:

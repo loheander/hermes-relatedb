@@ -114,3 +114,33 @@ def test_non_retryable_error_is_not_retried(tmp_path: Path):
         with pytest.raises(FatalError):
             store.submit(boom)
         assert attempts["count"] == 1
+
+
+def test_spawn_helpers_start_unstarted_hermes_context_thread():
+    import sys
+    from types import ModuleType
+
+    from relatedb_memory import provider as prov_mod
+    from relatedb_memory import store as store_mod
+
+    ran_worker = threading.Event()
+    ran_bg = threading.Event()
+
+    def fake_spawn_context_thread(target, *, name, daemon=True):
+        # Hermes's agent.memory_provider.spawn_context_thread returns an unstarted Thread.
+        return threading.Thread(target=target, name=name, daemon=daemon)
+
+    fake_agent = ModuleType("agent")
+    fake_mp = ModuleType("agent.memory_provider")
+    fake_mp.spawn_context_thread = fake_spawn_context_thread  # type: ignore[attr-defined]
+    fake_agent.memory_provider = fake_mp  # type: ignore[attr-defined]
+
+    with patch.dict(sys.modules, {"agent": fake_agent, "agent.memory_provider": fake_mp}):
+        t_worker = store_mod._spawn_worker(ran_worker.set, "test-worker")
+        assert ran_worker.wait(timeout=2.0)
+        t_worker.join(timeout=2.0)
+
+    with patch.object(prov_mod, "_hermes_spawn_context_thread", fake_spawn_context_thread):
+        t_bg = prov_mod._spawn_bg(ran_bg.set, "test-bg")
+        assert ran_bg.wait(timeout=2.0)
+        t_bg.join(timeout=2.0)

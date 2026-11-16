@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.entry-points."hermes_agent.memory_providers"]
-relatedb = "relatedb_memory.provider:RelateDBMemoryProvider"
+relatedb = "relatedb_memory:register"
 
 [build-system]
 requires = ["hatchling"]

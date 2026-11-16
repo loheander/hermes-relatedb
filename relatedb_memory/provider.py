@@ -227,8 +227,9 @@ def _is_trivial_prompt(query: str) -> bool:
 
 def _spawn_bg(target: Any, name: str) -> threading.Thread:
     if _hermes_spawn_context_thread is not None:
-        return _hermes_spawn_context_thread(target=target, name=name, daemon=True)
-    thread = threading.Thread(target=target, name=name, daemon=True)
+        thread = _hermes_spawn_context_thread(target=target, name=name, daemon=True)
+    else:
+        thread = threading.Thread(target=target, name=name, daemon=True)
     thread.start()
     return thread
 

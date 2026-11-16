@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "updated": "2026-11-16T08:19:19Z",
+  "source": "/issue-triage",
+  "analyzed_count": 16,
+  "issues": [
+    {
+      "number": 1,
+      "title": "Plugin package scaffold, manifest, and test harness",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        2,
+        3
+      ],
+      "blocked_by": [],
+      "status": "ready",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "__init__.py",
+        "config.py",
+        "embedder.py",
+        "provider.py",
+        "schema.py",
+        "store.py",
+        "tests/conftest.py"
+      ],
+      "updated_at": "2026-11-15T12:32:13Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 2,
+      "title": "Dogfood RelateDB codebase-context graph in a git-tracked directory store for repo ADRs and specs",
+      "type": "feature",
+      "priority": "P3",
+      "blocks": [],
+      "blocked_by": [
+        1
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "documentation",
+        "story"
+      ],
+      "affected_files": [
+        "tools/index_specs.py"
+      ],
+      "updated_at": "2026-11-15T15:08:58Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 3,
+      "title": "Profile-scoped configuration, config_schema.py, and store path resolution",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        4,
+        11
+      ],
+      "blocked_by": [
+        1
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "__init__.py",
+        "config_schema.py"
+      ],
+      "updated_at": "2026-11-15T12:32:17Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 11,
+      "title": "Readable E2E acceptance tests for bi-temporal graph schema and thread-affine store engine",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        4
+      ],
+      "blocked_by": [
+        3
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_store_schema.py"
+      ],
+      "updated_at": "2026-11-15T12:31:48Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 4,
+      "title": "Bi-temporal Entity-Episode-Fact graph schema and thread-affine Relate store engine",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        5,
+        6,
+        12
+      ],
+      "blocked_by": [
+        3,
+        11
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_store_schema.py"
+      ],
+      "updated_at": "2026-11-15T12:32:19Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 5,
+      "title": "Local vector embedding pipeline (model2vec) with dimension validation",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        6,
+        12
+      ],
+      "blocked_by": [
+        4
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [],
+      "updated_at": "2026-11-15T12:32:22Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 12,
+      "title": "Readable E2E acceptance tests for bi-temporal write path, slot supersession, and provenance",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        6
+      ],
+      "blocked_by": [
+        4,
+        5
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_bitemporal_writes.py"
+      ],
+      "updated_at": "2026-11-15T12:31:50Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 6,
+      "title": "Bi-temporal write path: episodes, slot supersession, and provenance links",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        7,
+        8,
+        9,
+        13,
+        14,
+        15
+      ],
+      "blocked_by": [
+        4,
+        5,
+        12
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_bitemporal_writes.py"
+      ],
+      "updated_at": "2026-11-15T12:32:24Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 13,
+      "title": "Readable E2E acceptance tests for pre-filtered vector recall, prefetch lifecycle, and RecallStatus",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        7
+      ],
+      "blocked_by": [
+        6
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_recall_prefetch.py"
+      ],
+      "updated_at": "2026-11-15T12:31:52Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 7,
+      "title": "Pre-filtered vector recall, prefetch lifecycle, and RecallStatus indicator",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        8,
+        9,
+        14,
+        15
+      ],
+      "blocked_by": [
+        6,
+        13
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_recall_prefetch.py"
+      ],
+      "updated_at": "2026-11-15T12:32:27Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 14,
+      "title": "Readable E2E acceptance tests for turn sync, memory-write mirroring, and pre-compression hooks",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        8
+      ],
+      "blocked_by": [
+        6,
+        7
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_session_hooks.py"
+      ],
+      "updated_at": "2026-11-15T12:31:54Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 15,
+      "title": "Readable E2E acceptance tests for agent memory tools (remember, recall, as-of, provenance, cypher)",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        9
+      ],
+      "blocked_by": [
+        6,
+        7
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_agent_tools.py"
+      ],
+      "updated_at": "2026-11-15T12:31:55Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 8,
+      "title": "Turn synchronization, built-in memory write mirroring, and pre-compression hooks",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        10,
+        16
+      ],
+      "blocked_by": [
+        6,
+        7,
+        14
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_session_hooks.py"
+      ],
+      "updated_at": "2026-11-15T12:32:29Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 9,
+      "title": "Agent memory tools: remember, recall, as-of bi-temporal audit, provenance, and Cypher read",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        10,
+        16
+      ],
+      "blocked_by": [
+        6,
+        7,
+        15
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/test_e2e_agent_tools.py"
+      ],
+      "updated_at": "2026-11-15T12:32:32Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 16,
+      "title": "Readable E2E acceptance tests for diffable JSON store git workflow, MCP sidecar, and CLI",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        10
+      ],
+      "blocked_by": [
+        8,
+        9
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "cli.py",
+        "tests/e2e/test_e2e_cli_and_diffable.py"
+      ],
+      "updated_at": "2026-11-15T12:31:57Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 10,
+      "title": "Diffable JSON store mode, MCP sidecar support, and hermes relatedb CLI",
+      "type": "feature",
+      "priority": "P3",
+      "blocks": [],
+      "blocked_by": [
+        8,
+        9,
+        16
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "story"
+      ],
+      "affected_files": [
+        "__init__.py",
+        "cli.py",
+        "tests/e2e/test_e2e_cli_and_diffable.py"
+      ],
+      "updated_at": "2026-11-15T12:32:34Z",
+      "potentially_fixed_by": null
+    }
+  ],
+  "summary": {
+    "parallel_groups": [
+      [
+        2,
+        3
+      ],
+      [
+        14,
+        15
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "stale_count": 0,
+    "stale_threshold_days": 7,
+    "potentially_fixed_count": 0,
+    "suggested_order": [
+      1,
+      2,
+      3,
+      11,
+      4,
+      5,
+      12,
+      6,
+      13,
+      7,
+      14,
+      15,
+      8,
+      9,
+      16,
+      10
+    ],
+    "circular_deps": [],
+    "co_dependent": []
+  },
+  "history": [
+    {
+      "time": "2026-11-16T08:19:19Z",
+      "source": "/issue-triage",
+      "changes": "Full re-triage (16 issues)"
+    }
+  ]
+}

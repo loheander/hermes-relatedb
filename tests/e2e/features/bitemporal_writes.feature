@@ -1,4 +1,3 @@
-@pending_6
 Feature: Bi-temporal write path, slot supersession, and provenance
   Facts are never overwritten or deleted when knowledge changes.
   Episodes record provenance, slot corrections supersede prior open facts

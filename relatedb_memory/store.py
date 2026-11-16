@@ -8,13 +8,18 @@ from __future__ import annotations
 import queue
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Any
 
 from .config import RelateDBConfig
+from .embedder import format_vector
 from .schema import ensure_schema, validate_embedding_dim
+
+EPISODE_KINDS: frozenset[str] = frozenset(
+    {"message", "tool_call", "memory_write", "delegation", "pre_compress"}
+)
 
 DEFAULT_QUEUE_SIZE = 256
 DEFAULT_ENQUEUE_TIMEOUT = 5.0
@@ -209,6 +214,143 @@ class RelateStore:
             return list(cursor)
 
         return self.submit(_query)
+
+    def record_episode(
+        self,
+        *,
+        episode_id: str,
+        session: str,
+        kind: str,
+        at: str,
+        text: str,
+        mentions: Sequence[str] = (),
+    ) -> None:
+        """Idempotently upsert an ``:Episode`` and its ``:MENTIONS`` entity links."""
+        if kind not in EPISODE_KINDS:
+            raise ValueError(f"Unsupported episode kind {kind!r}; expected one of {sorted(EPISODE_KINDS)}")
+        mention_keys = list(dict.fromkeys(mentions))
+
+        def _op(conn: Any) -> None:
+            conn.execute(
+                "MERGE (ep:Episode {id: $episode_id}) "
+                "ON CREATE SET ep.session = $session, ep.kind = $kind, ep.at = $at, ep.text = $text",
+                {
+                    "episode_id": episode_id,
+                    "session": session,
+                    "kind": kind,
+                    "at": at,
+                    "text": text,
+                },
+            )
+            for key in mention_keys:
+                conn.execute(
+                    "MATCH (ep:Episode {id: $episode_id}) "
+                    "MERGE (e:Entity {key: $key}) "
+                    "MERGE (ep)-[:MENTIONS]->(e)",
+                    {"episode_id": episode_id, "key": key},
+                )
+
+        self.submit(_op)
+
+    def record_fact(
+        self,
+        *,
+        fact_id: str,
+        text: str,
+        slot: str | None,
+        valid_from: str,
+        recorded_at: str,
+        episode_id: str,
+        about: Sequence[str] = (),
+        embedding: Sequence[float] | None = None,
+    ) -> None:
+        """Idempotently upsert a ``:Fact``, link provenance, and supersede prior open slot facts."""
+        vec = (
+            format_vector(embedding, expected_dim=self._embedding_dim)
+            if embedding is not None
+            else None
+        )
+        about_keys = list(dict.fromkeys(about))
+
+        def _op(conn: Any) -> None:
+            if vec is not None:
+                conn.execute(
+                    "MERGE (f:Fact {id: $fact_id}) "
+                    "ON CREATE SET f.text = $text, f.slot = $slot, f.validFrom = $valid_from, "
+                    "f.recordedAt = $recorded_at, f.embedding = vector($embedding, $dim, FLOAT32)",
+                    {
+                        "fact_id": fact_id,
+                        "text": text,
+                        "slot": slot,
+                        "valid_from": valid_from,
+                        "recorded_at": recorded_at,
+                        "embedding": vec,
+                        "dim": self._embedding_dim,
+                    },
+                )
+            else:
+                conn.execute(
+                    "MERGE (f:Fact {id: $fact_id}) "
+                    "ON CREATE SET f.text = $text, f.slot = $slot, f.validFrom = $valid_from, "
+                    "f.recordedAt = $recorded_at",
+                    {
+                        "fact_id": fact_id,
+                        "text": text,
+                        "slot": slot,
+                        "valid_from": valid_from,
+                        "recorded_at": recorded_at,
+                    },
+                )
+            conn.execute(
+                "MATCH (f:Fact {id: $fact_id}), (ep:Episode {id: $episode_id}) "
+                "MERGE (f)-[:FROM]->(ep)",
+                {"fact_id": fact_id, "episode_id": episode_id},
+            )
+            for key in about_keys:
+                conn.execute(
+                    "MATCH (f:Fact {id: $fact_id}) "
+                    "MERGE (e:Entity {key: $key}) "
+                    "MERGE (f)-[:ABOUT]->(e)",
+                    {"fact_id": fact_id, "key": key},
+                )
+            if slot is not None:
+                conn.execute(
+                    "MATCH (new:Fact {id: $fact_id}), (old:Fact) "
+                    "WHERE old.slot = $slot AND old <> new "
+                    "AND old.closedAt IS NULL AND old.recordedAt <= new.recordedAt "
+                    "SET old.validTo = new.validFrom, old.closedAt = new.recordedAt "
+                    "MERGE (new)-[:SUPERSEDES]->(old)",
+                    {"fact_id": fact_id, "slot": slot},
+                )
+
+        self.submit(_op)
+
+    def retract_slot(self, *, slot: str, valid_to: str, closed_at: str) -> int:
+        """Close the active fact in ``slot`` without deleting it; return count closed."""
+
+        def _op(conn: Any) -> int:
+            rows = list(
+                conn.execute(
+                    "MATCH (f:Fact {slot: $slot}) "
+                    "WHERE f.closedAt IS NULL "
+                    "SET f.validTo = $valid_to, f.closedAt = $closed_at "
+                    "RETURN count(f) AS retracted",
+                    {"slot": slot, "valid_to": valid_to, "closed_at": closed_at},
+                )
+            )
+            return int(rows[0]["retracted"]) if rows else 0
+
+        return self.submit(_op)
+
+    def active_slots(self) -> list[str]:
+        """Return distinct slots that currently have an open fact."""
+        rows = self.run(
+            "MATCH (f:Fact) "
+            "WHERE f.closedAt IS NULL AND f.slot IS NOT NULL "
+            "RETURN DISTINCT f.slot AS slot "
+            "ORDER BY slot"
+        )
+        return [row["slot"] for row in rows]
 
     def close(self, timeout: float | None = None) -> None:
         """Flush pending operations and close the connection on its owning thread."""

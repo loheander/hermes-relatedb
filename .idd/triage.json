@@ -1,46 +1,17 @@
 {
   "version": 1,
-  "updated": "2026-11-16T08:19:19Z",
-  "source": "/issue-triage",
-  "analyzed_count": 16,
+  "updated": "2026-11-16T09:46:45Z",
+  "source": "/auto-pilot",
+  "analyzed_count": 15,
   "issues": [
-    {
-      "number": 1,
-      "title": "Plugin package scaffold, manifest, and test harness",
-      "type": "feature",
-      "priority": "P2",
-      "blocks": [
-        2,
-        3
-      ],
-      "blocked_by": [],
-      "status": "ready",
-      "stale_days": null,
-      "labels": [
-        "story"
-      ],
-      "affected_files": [
-        "__init__.py",
-        "config.py",
-        "embedder.py",
-        "provider.py",
-        "schema.py",
-        "store.py",
-        "tests/conftest.py"
-      ],
-      "updated_at": "2026-11-15T12:32:13Z",
-      "potentially_fixed_by": null
-    },
     {
       "number": 2,
       "title": "Dogfood RelateDB codebase-context graph in a git-tracked directory store for repo ADRs and specs",
       "type": "feature",
       "priority": "P3",
       "blocks": [],
-      "blocked_by": [
-        1
-      ],
-      "status": "blocked",
+      "blocked_by": [],
+      "status": "ready",
       "stale_days": null,
       "labels": [
         "documentation",
@@ -61,10 +32,8 @@
         4,
         11
       ],
-      "blocked_by": [
-        1
-      ],
-      "status": "blocked",
+      "blocked_by": [],
+      "status": "ready",
       "stale_days": null,
       "labels": [
         "story"
@@ -408,7 +377,6 @@
     "stale_threshold_days": 7,
     "potentially_fixed_count": 0,
     "suggested_order": [
-      1,
       2,
       3,
       11,
@@ -430,9 +398,9 @@
   },
   "history": [
     {
-      "time": "2026-11-16T08:19:19Z",
-      "source": "/issue-triage",
-      "changes": "Full re-triage (16 issues)"
+      "time": "2026-11-16T09:46:45Z",
+      "source": "/auto-pilot",
+      "changes": "Full re-triage (15 issues)"
     }
   ]
 }

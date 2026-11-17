@@ -268,14 +268,15 @@ def mcp_outputs_valid_config(world):
     ]
 
 
-@then("importing cli and building the parser does not load model2vec or numpy")
+@then("importing cli and building the parser does not load fastembed or numpy")
 def cli_import_is_lightweight():
     proc = subprocess.run(
         [
             sys.executable,
             "-c",
             "import sys, cli; cli.build_parser(); "
-            "assert 'model2vec' not in sys.modules; "
+            "assert 'fastembed' not in sys.modules; "
+            "assert 'onnxruntime' not in sys.modules; "
             "assert 'numpy' not in sys.modules",
         ],
         cwd=ROOT,

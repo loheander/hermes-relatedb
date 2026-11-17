@@ -47,7 +47,7 @@ A graph is the natural shape for memory: people, projects, notes and decisions c
 
 ### Private by default
 
-Embeddings come from a small [`model2vec`](https://github.com/MinishLab/model2vec) model running on CPU. Apart from a one-time model download from Hugging Face, nothing leaves your machine. There is no hosted service, no API key and no GPU requirement.
+Embeddings come from a small [`fastembed`](https://github.com/qdrant/fastembed) (`BAAI/bge-small-en-v1.5`, INT8 ONNX, 384 dimensions) model running on CPU without PyTorch. Apart from a one-time model download from Hugging Face, nothing leaves your machine. There is no hosted service, no API key and no GPU requirement.
 
 ### What it does on your machine
 
@@ -59,7 +59,7 @@ Embeddings come from a small [`model2vec`](https://github.com/MinishLab/model2ve
 
 ### Trade-offs
 
-- `model2vec` embeddings are fast and local but less nuanced than large hosted embedding models.
+- `fastembed` (`BAAI/bge-small-en-v1.5`) runs locally on CPU; for even higher recall or different languages, you can configure another supported `fastembed` model.
 - Only one Hermes process can write to a store at a time. Other processes can read it (`--read-only=live`).
 - Each store is tied to one embedding dimension. Switching to a model with a different dimension needs a new store.
 
@@ -80,7 +80,7 @@ You do not need to clone anything. Hermes fetches the plugin straight from GitHu
 hermes plugins install loheander/hermes-relatedb
 ```
 
-Hermes asks before it installs the Python dependencies (`relate-db`, `model2vec`, `pyyaml`). It then asks whether to use `relatedb-memory` as your memory provider. Answer **y**.
+Hermes asks before it installs the Python dependencies (`relate-db`, `fastembed`, `pyyaml`). It then asks whether to use `relatedb-memory` as your memory provider. Answer **y**.
 
 For an unattended install, or to install into a named profile:
 
@@ -158,7 +158,7 @@ memory:
   relatedb-memory:
     snapshot_format: parquet   # parquet | json | rl
     db_path: memory/           # relative to the Hermes profile directory
-    embedding_model: minishlab/potion-science-8M
+    embedding_model: BAAI/bge-small-en-v1.5
     prefetch_top_k: 8
     auto_extract: true
 ```
@@ -167,7 +167,7 @@ memory:
 | --- | --- | --- |
 | `snapshot_format` | `parquet` | `parquet`: compact directory. `json`: git-diffable directory. `rl`: single file. |
 | `db_path` | `memory/` (`memory.rl` for `rl`) | Where the store lives. A directory for `parquet`/`json`, a `.rl` file for `rl`. |
-| `embedding_model` | `minishlab/potion-science-8M` | Any `model2vec` model. Keep the same dimension for an existing store. |
+| `embedding_model` | `BAAI/bge-small-en-v1.5` | Any `fastembed` model. Keep the same dimension for an existing store. |
 | `prefetch_top_k` | `8` | How many facts are added to context before each turn. |
 | `auto_extract` | `true` | Extract facts from conversation turns automatically. |
 

@@ -1,6 +1,6 @@
 # ADR-0003: Local model2vec embeddings
 
-- Status: Accepted
+- Status: Superseded
 - Date: 2026-11-16
 
 ## Context

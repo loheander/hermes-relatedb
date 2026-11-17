@@ -46,8 +46,8 @@ CONFIG_SCHEMA = ProviderConfigSchema(
             key="embedding_model",
             label="Embedding model",
             kind=KIND_TEXT,
-            default="minishlab/potion-science-8M",
-            description="model2vec model used for local vector recall (256-dim by default).",
+            default="BAAI/bge-small-en-v1.5",
+            description="fastembed model used for local vector recall (384-dim by default).",
             group="Recall",
         ),
         ProviderField(

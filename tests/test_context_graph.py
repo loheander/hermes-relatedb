@@ -116,7 +116,8 @@ def test_committed_store_is_current_and_covers_amendment():
     assert index_specs.is_current(store, desired)
     assert any(r[2] == "SUPERSEDES" and r[4] is True for r in desired["rels"])
     numbers = [r["number"] for r in index_specs.run_query(store, "active-adrs")]
-    assert {"0001", "0002", "0003", "0004", "0005"} <= set(numbers)
+    assert {"0001", "0002", "0004", "0005", "0006"} <= set(numbers)
+    assert "0003" not in set(numbers)
 
 
 def test_repo_conventions_for_git_diff():

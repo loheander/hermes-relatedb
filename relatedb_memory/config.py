@@ -25,7 +25,7 @@ SNAPSHOT_FORMATS = ("rl", "parquet", "json")
 DIRECTORY_FORMATS = ("parquet", "json")
 
 DEFAULT_SNAPSHOT_FORMAT = "parquet"
-DEFAULT_EMBEDDING_MODEL = "minishlab/potion-science-8M"
+DEFAULT_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_PREFETCH_TOP_K = 8
 DEFAULT_AUTO_EXTRACT = True
 

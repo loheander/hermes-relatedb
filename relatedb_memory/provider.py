@@ -347,7 +347,7 @@ class RelateDBMemoryProvider(_Base):
 
         def _worker() -> None:
             try:
-                vec = embedder.embed_one(query)
+                vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
                 hits = store.vector_recall(vec, k=top_k)
             except Exception:
                 return
@@ -385,7 +385,7 @@ class RelateDBMemoryProvider(_Base):
                 self._prefetch_cache = None
 
         if hits is None:
-            vec = embedder.embed_one(query)
+            vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
             hits = store.vector_recall(vec, k=self._config.prefetch_top_k)
 
         if not hits:
@@ -636,7 +636,7 @@ class RelateDBMemoryProvider(_Base):
             k = int(args.get("k") or (self._config.prefetch_top_k if self._config else 8))
             if embedder is None:
                 return json.dumps({"results": []})
-            vec = embedder.embed_one(query)
+            vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
             hits = store.vector_recall(vec, k=k)
             return json.dumps({"results": hits}, default=str)
 
@@ -759,7 +759,7 @@ class RelateDBMemoryProvider(_Base):
             },
             {
                 "key": "embedding_model",
-                "description": "model2vec embedding model",
+                "description": "fastembed embedding model",
                 "default": _config.DEFAULT_EMBEDDING_MODEL,
             },
             {

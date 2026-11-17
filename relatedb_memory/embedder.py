@@ -1,7 +1,7 @@
-"""Local vector embedding pipeline using model2vec.
+"""Local vector embedding pipeline using fastembed.
 
-See ADR-0003. This is the only module in ``relatedb_memory`` that imports
-``model2vec``.
+See ADR-0006. This is the only module in ``relatedb_memory`` that imports
+``fastembed``.
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ from typing import Any, Protocol, runtime_checkable
 
 from .config import DEFAULT_EMBEDDING_MODEL
 
-DEFAULT_EMBEDDING_DIM = 256
+DEFAULT_EMBEDDING_DIM = 384
 
 _MODEL_LOCK = threading.Lock()
 _MODEL_CACHE: dict[str, Any] = {}
-_EMBEDDER_CACHE: dict[str, Model2VecEmbedder] = {}
+_EMBEDDER_CACHE: dict[str, FastEmbedEmbedder] = {}
 
 
 @runtime_checkable
@@ -32,6 +32,8 @@ class Embedder(Protocol):
     def embed(self, texts: Sequence[str]) -> list[list[float]]: ...
 
     def embed_one(self, text: str) -> list[float]: ...
+
+    def embed_query(self, text: str) -> list[float]: ...
 
 
 def _warmup_numpy() -> Any:
@@ -58,21 +60,21 @@ def format_vector(values: Sequence[float] | Any, expected_dim: int | None = None
     return vec
 
 
-def _load_static_model(model_name: str) -> Any:
+def _load_fastembed_model(model_name: str) -> Any:
     with _MODEL_LOCK:
         cached = _MODEL_CACHE.get(model_name)
         if cached is not None:
             return cached
         _warmup_numpy()
-        from model2vec import StaticModel
+        from fastembed import TextEmbedding
 
-        model = StaticModel.from_pretrained(model_name)
+        model = TextEmbedding(model_name=model_name)
         _MODEL_CACHE[model_name] = model
         return model
 
 
-class Model2VecEmbedder:
-    """Lazy, thread-safe wrapper around ``model2vec.StaticModel``."""
+class FastEmbedEmbedder:
+    """Lazy, thread-safe wrapper around ``fastembed.TextEmbedding``."""
 
     def __init__(self, model_name: str = DEFAULT_EMBEDDING_MODEL) -> None:
         self.model_name = model_name
@@ -81,11 +83,11 @@ class Model2VecEmbedder:
     @property
     def dim(self) -> int:
         if self._dim is None:
-            model = _load_static_model(self.model_name)
+            model = _load_fastembed_model(self.model_name)
             dim = getattr(model, "dim", None)
             if dim is None:
-                sample = model.encode(["dimension probe"], show_progress_bar=False)
-                dim = len(sample[0])
+                sample = next(iter(model.embed(["dimension probe"])))
+                dim = len(sample)
             self._dim = int(dim)
         return self._dim
 
@@ -93,13 +95,20 @@ class Model2VecEmbedder:
         items = list(texts)
         if not items:
             return []
-        model = _load_static_model(self.model_name)
-        encoded = model.encode(items, show_progress_bar=False)
+        model = _load_fastembed_model(self.model_name)
+        encoded = list(model.embed(items))
         expected = self.dim
         return [format_vector(row, expected_dim=expected) for row in encoded]
 
     def embed_one(self, text: str) -> list[float]:
         return self.embed([text])[0]
+
+    def embed_query(self, text: str) -> list[float]:
+        model = _load_fastembed_model(self.model_name)
+        if hasattr(model, "query_embed"):
+            encoded = list(model.query_embed([text]))
+            return format_vector(encoded[0], expected_dim=self.dim)
+        return self.embed_one(text)
 
 
 class FakeEmbedder:
@@ -131,12 +140,15 @@ class FakeEmbedder:
         norm = math.sqrt(sum(v * v for v in raw)) or 1.0
         return format_vector([v / norm for v in raw], expected_dim=self._dim)
 
+    def embed_query(self, text: str) -> list[float]:
+        return self.embed_one(text)
 
-def get_embedder(model_name: str = DEFAULT_EMBEDDING_MODEL) -> Model2VecEmbedder:
-    """Return a cached ``Model2VecEmbedder`` for ``model_name``."""
+
+def get_embedder(model_name: str = DEFAULT_EMBEDDING_MODEL) -> FastEmbedEmbedder:
+    """Return a cached ``FastEmbedEmbedder`` for ``model_name``."""
     with _MODEL_LOCK:
         embedder = _EMBEDDER_CACHE.get(model_name)
         if embedder is None:
-            embedder = Model2VecEmbedder(model_name)
+            embedder = FastEmbedEmbedder(model_name)
             _EMBEDDER_CACHE[model_name] = embedder
         return embedder

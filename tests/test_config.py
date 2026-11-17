@@ -30,7 +30,7 @@ def test_defaults(tmp_path):
     c = resolve(tmp_path)
     assert c.db_path == tmp_path / "memory"
     assert c.snapshot_format == "parquet"
-    assert c.embedding_model == "minishlab/potion-science-8M"
+    assert c.embedding_model == "BAAI/bge-small-en-v1.5"
     assert c.prefetch_top_k == 8
     assert c.auto_extract is True
 

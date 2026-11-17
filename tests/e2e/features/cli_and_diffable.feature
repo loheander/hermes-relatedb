@@ -28,4 +28,4 @@ Feature: Diffable JSON store git workflow, MCP sidecar, and hermes relatedb-memo
     Given an initialized diffable store
     When hermes relatedb-memory mcp --read-only is run
     Then it outputs a valid relate serve --mcp stdio --read-only=live configuration
-    And importing cli and building the parser does not load model2vec or numpy
+    And importing cli and building the parser does not load fastembed or numpy

@@ -61,7 +61,7 @@ Embeddings come from a small [`fastembed`](https://github.com/qdrant/fastembed) 
 
 - `fastembed` (`BAAI/bge-small-en-v1.5`) runs locally on CPU; for even higher recall or different languages, you can configure another supported `fastembed` model.
 - Only one Hermes process can write to a store at a time. Other processes can read it (`--read-only=live`).
-- Each store is tied to one embedding dimension. Switching to a model with a different dimension needs a new store.
+- Each store is tied to one embedding dimension. Switching from an existing 256-dim `model2vec` store to the 384-dim `BAAI/bge-small-en-v1.5` default requires re-embedding the store with `tools/migrate_embeddings.py`.
 
 ---
 
@@ -182,6 +182,18 @@ hermes relatedb-memory init-diffable ./memory
 ```
 
 This creates a JSON store and configures `git diff` to pretty-print it with `jq`. Point `db_path` at that directory and set `snapshot_format: json`.
+
+### Upgrading and re-embedding existing stores
+
+If you have an existing 256-dim `model2vec` store (`.rl` file, `parquet` directory, or `json` directory), re-embed it to 384-dim `BAAI/bge-small-en-v1.5` before opening it with the updated plugin:
+
+```sh
+# Preview fact count and dimensions without modifying the store
+uv run python tools/migrate_embeddings.py --db-path ~/.hermes/memory --dry-run
+
+# Re-embed in place (creates a timestamped backup by default)
+uv run python tools/migrate_embeddings.py --db-path ~/.hermes/memory
+```
 
 ---
 

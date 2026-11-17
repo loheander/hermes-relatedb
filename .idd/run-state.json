@@ -1,31 +1,30 @@
 {
   "version": 1,
-  "run_id": "20261116T120949Z-3728079",
-  "started_at": "2026-11-16T12:10:07Z",
-  "updated_at": "2026-11-16T12:17:20Z",
+  "run_id": "20261117T091514Z-4149913",
+  "started_at": "2026-11-17T09:16:30Z",
+  "updated_at": "2026-11-17T09:36:20Z",
   "invocation": "/auto-pilot",
   "mode": "balanced",
   "limit": 10,
-  "queue": [
-    16,
-    10
-  ],
+  "queue": [],
   "phase": "triage",
   "lanes": [],
   "current": null,
   "processed": [
     {
-      "issue": 16,
+      "issue": 35,
       "outcome": "merged",
-      "pr": 31
+      "pr": 36
     },
     {
-      "issue": 10,
+      "issue": 34,
       "outcome": "merged",
-      "pr": 32
+      "pr": 37
     }
   ],
-  "skip_list": [],
+  "skip_list": [
+    33
+  ],
   "report_path": null,
   "borrowed_skills": []
 }

@@ -13,3 +13,5 @@
 {"ts":"2026-11-16T11:19:39Z","issue":9,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":30,"verification":"full"}
 {"ts":"2026-11-16T12:14:23Z","issue":16,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":31,"verification":"full"}
 {"ts":"2026-11-16T12:17:20Z","issue":10,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"merged","pr":32,"verification":"full"}
+{"ts":"2026-11-17T09:28:08Z","issue":35,"mode":"auto","skill":"auto-pilot","complexity":"medium","outcome":"merged","pr":36,"verification":"full"}
+{"ts":"2026-11-17T09:35:56Z","issue":34,"mode":"auto","skill":"auto-pilot","complexity":"medium","outcome":"merged","pr":37,"verification":"full"}

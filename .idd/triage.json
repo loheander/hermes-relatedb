@@ -1,23 +1,42 @@
 {
   "version": 1,
-  "updated": "2026-11-16T12:17:20Z",
+  "updated": "2026-11-17T09:35:57Z",
   "source": "/auto-pilot",
-  "analyzed_count": 0,
-  "issues": [],
+  "analyzed_count": 1,
+  "issues": [
+    {
+      "number": 33,
+      "title": "Feature request: integrated Dream Mode for provenance-aware memory consolidation",
+      "type": "feature",
+      "priority": "P3",
+      "blocks": [],
+      "blocked_by": [],
+      "status": "ready",
+      "stale_days": null,
+      "labels": [],
+      "affected_files": [
+        "relatedb_memory/provider.py"
+      ],
+      "updated_at": "2026-11-16T20:59:42Z",
+      "potentially_fixed_by": null
+    }
+  ],
   "summary": {
     "parallel_groups": [],
     "stale_count": 0,
     "stale_threshold_days": 7,
     "potentially_fixed_count": 0,
-    "suggested_order": [],
+    "suggested_order": [
+      33
+    ],
     "circular_deps": [],
     "co_dependent": []
   },
   "history": [
     {
-      "time": "2026-11-16T10:45:18Z",
+      "time": "2026-11-17T09:18:02Z",
       "source": "/auto-pilot",
-      "changes": "Full re-triage (12 issues)"
+      "changes": "Full re-triage (3 issues)"
     }
   ]
 }

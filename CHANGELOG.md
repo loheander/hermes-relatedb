@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The memory graph schema is now an executable e2e contract, `tests/e2e/features/memory_schema.feature`, replacing the drifted `specs/memory-schema.md` (#41).
+- The memory graph schema is now an executable e2e contract, `tests/e2e/features/memory_schema.feature`, replacing the former, drifted memory schema spec (#41).
 
 ### Fixed
 

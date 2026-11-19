@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `on_memory_write` now keeps one slot per `USER.md`/`MEMORY.md` entry instead of one per file, so `add`, `replace` and `remove` affect only the entry they name (#42). Stores written by earlier versions need a one-off resync: re-add the entries that exist now and leave the history as it is.
+
 ## [1.0.0] - 2026-11-17
 
 ### Breaking Changes

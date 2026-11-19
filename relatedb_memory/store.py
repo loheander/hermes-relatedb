@@ -264,8 +264,13 @@ class RelateStore:
         episode_id: str,
         about: Sequence[str] = (),
         embedding: Sequence[float] | None = None,
+        supersedes_slot: str | None = None,
     ) -> None:
-        """Idempotently upsert a ``:Fact``, link provenance, and supersede prior open slot facts."""
+        """Idempotently upsert a ``:Fact``, link provenance, and supersede prior open slot facts.
+
+        ``supersedes_slot`` additionally closes the open facts of a *different* slot
+        and links them with ``SUPERSEDES`` (cross-slot supersession).
+        """
         vec = (
             format_vector(embedding, expected_dim=self._embedding_dim)
             if embedding is not None
@@ -323,6 +328,15 @@ class RelateStore:
                     "MERGE (new)-[:SUPERSEDES]->(old)",
                     {"fact_id": fact_id, "slot": slot},
                 )
+            if supersedes_slot is not None and supersedes_slot != slot:
+                conn.execute(
+                    "MATCH (new:Fact {id: $fact_id}), (old:Fact) "
+                    "WHERE old.slot = $old_slot AND old <> new "
+                    "AND old.closedAt IS NULL AND old.recordedAt <= new.recordedAt "
+                    "SET old.validTo = new.validFrom, old.closedAt = new.recordedAt "
+                    "MERGE (new)-[:SUPERSEDES]->(old)",
+                    {"fact_id": fact_id, "old_slot": supersedes_slot},
+                )
 
         self.submit(_op)
 
@@ -342,6 +356,16 @@ class RelateStore:
             return int(rows[0]["retracted"]) if rows else 0
 
         return self.submit(_op)
+
+    def open_facts_with_slot_prefix(self, prefix: str) -> list[dict[str, str]]:
+        """Return ``{slot, text}`` for open facts whose slot starts with ``prefix``."""
+        rows = self.run(
+            "MATCH (f:Fact) "
+            "WHERE f.closedAt IS NULL AND f.slot STARTS WITH $prefix "
+            "RETURN f.slot AS slot, f.text AS text ORDER BY slot",
+            prefix=prefix,
+        )
+        return [{"slot": row["slot"], "text": row["text"]} for row in rows]
 
     def active_slots(self) -> list[str]:
         """Return distinct slots that currently have an open fact."""

@@ -121,7 +121,7 @@ You normally do nothing. Once active, the plugin works in the background:
 
 - **Before each turn** it recalls the most relevant current facts and adds them to the agent's context.
 - **After each turn** it extracts new facts from the conversation (turn off with `auto_extract: false`).
-- **When Hermes writes built-in memory** (`MEMORY.md`/`USER.md`), the write is mirrored into the graph.
+- **When Hermes writes built-in memory** (`MEMORY.md`/`USER.md`), the write is mirrored into the graph, one fact per entry. If you installed an earlier version, its mirrored `USER.md`/`MEMORY.md` facts were closed wrongly: re-add the entries that exist now (for example with `relatedb_remember`) and leave the history as it is.
 - **Before Hermes compresses context**, the messages about to be summarised are saved as an episode, so nothing is lost.
 
 The agent also gets these tools, and the bundled `relatedb-memory` skill teaches it how to use them:

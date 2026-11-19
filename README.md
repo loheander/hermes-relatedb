@@ -150,7 +150,7 @@ Every command prints JSON and accepts `--path` to target a store other than the 
 
 ## Configuration
 
-The defaults suit most people. To change them, run `hermes memory setup relatedb-memory` or edit `memory.relatedb-memory` in `<hermes_home>/config.yaml`:
+The defaults suit most people. Every setting is documented in [CONFIGURATION.md](CONFIGURATION.md). To change them, run `hermes memory setup relatedb-memory` or edit `memory.relatedb-memory` in `<hermes_home>/config.yaml`:
 
 ```yaml
 memory:

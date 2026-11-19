@@ -1,6 +1,6 @@
 [project]
 name = "hermes-relatedb"
-version = "1.1.0"
+version = "1.2.0"
 description = "Hermes memory provider backed by RelateDB"
 readme = "README.md"
 authors = [

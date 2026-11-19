@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-19
+
 ### Added
 
+- `CONFIGURATION.md` documents every setting, its default, accepted values, environment variable and precedence. The README links to it.
 - New setting `mirror_builtin_memory` (default `true`, env `RELATEDB_MIRROR_BUILTIN_MEMORY`). When `false`, `on_memory_write` skips the built-in `user` and `memory` targets and writes, closes and embeds nothing; explicit slots still record. Trade-off: history and `relatedb_as_of` for built-in entries versus a duplicate copy of what Hermes already injects. Facts already mirrored stay until forgotten, and re-enabling mirrors only new writes (#48).
 
 ## [1.1.0] - 2026-11-19

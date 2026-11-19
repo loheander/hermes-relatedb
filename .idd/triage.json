@@ -1,9 +1,104 @@
 {
   "version": 1,
-  "updated": "2026-11-17T09:35:57Z",
-  "source": "/auto-pilot",
-  "analyzed_count": 1,
+  "updated": "2026-11-19T13:21:50Z",
+  "source": "/issue-triage",
+  "analyzed_count": 5,
   "issues": [
+    {
+      "number": 39,
+      "title": "Rank deliberate memories above captured turns in recall",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        40
+      ],
+      "blocked_by": [],
+      "status": "ready",
+      "stale_days": null,
+      "labels": [
+        "enhancement",
+        "story"
+      ],
+      "affected_files": [
+        "relatedb_memory/provider.py",
+        "relatedb_memory/store.py",
+        "tools/migrate_embeddings.py"
+      ],
+      "updated_at": "2026-11-19T12:50:30Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 41,
+      "title": "Replace specs/memory-schema.md with an executable e2e schema contract",
+      "type": null,
+      "priority": "P3",
+      "blocks": [],
+      "blocked_by": [
+        39,
+        40,
+        42
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "documentation",
+        "story"
+      ],
+      "affected_files": [
+        "tests/e2e/features/memory_schema.feature",
+        "relatedb_memory/schema.py",
+        "relatedb_memory/store.py",
+        "specs/memory-schema.md"
+      ],
+      "updated_at": "2026-11-19T12:50:33Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 40,
+      "title": "Flag near-duplicate facts with embeddings and collapse them in recall",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        41
+      ],
+      "blocked_by": [
+        39
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "enhancement",
+        "story"
+      ],
+      "affected_files": [
+        "relatedb_memory/provider.py",
+        "relatedb_memory/store.py",
+        "relatedb_memory/config.py"
+      ],
+      "updated_at": "2026-11-19T12:50:39Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 42,
+      "title": "on_memory_write collapses all USER.md/MEMORY.md entries into one slot",
+      "type": "bug",
+      "priority": "P2",
+      "blocks": [
+        41
+      ],
+      "blocked_by": [],
+      "status": "ready",
+      "stale_days": null,
+      "labels": [
+        "bug"
+      ],
+      "affected_files": [
+        "relatedb_memory/provider.py",
+        "relatedb_memory/store.py"
+      ],
+      "updated_at": "2026-11-19T13:05:28Z",
+      "potentially_fixed_by": null
+    },
     {
       "number": 33,
       "title": "Feature request: integrated Dream Mode for provenance-aware memory consolidation",
@@ -11,22 +106,36 @@
       "priority": "P3",
       "blocks": [],
       "blocked_by": [],
-      "status": "ready",
+      "status": "unclear",
       "stale_days": null,
-      "labels": [],
+      "labels": [
+        "enhancement",
+        "question",
+        "blocked",
+        "blocked"
+      ],
       "affected_files": [
         "relatedb_memory/provider.py"
       ],
-      "updated_at": "2026-11-16T20:59:42Z",
+      "updated_at": "2026-11-19T13:21:30Z",
       "potentially_fixed_by": null
     }
   ],
   "summary": {
-    "parallel_groups": [],
+    "parallel_groups": [
+      [
+        42,
+        39
+      ]
+    ],
     "stale_count": 0,
     "stale_threshold_days": 7,
     "potentially_fixed_count": 0,
     "suggested_order": [
+      42,
+      39,
+      40,
+      41,
       33
     ],
     "circular_deps": [],
@@ -34,9 +143,14 @@
   },
   "history": [
     {
-      "time": "2026-11-17T09:18:02Z",
-      "source": "/auto-pilot",
-      "changes": "Full re-triage (3 issues)"
+      "time": "2026-11-19T13:21:50Z",
+      "source": "/issue-triage",
+      "changes": "Full re-triage (5 issues)"
+    },
+    {
+      "time": "2026-11-19T13:21:50Z",
+      "source": "/issue-triage",
+      "changes": "Manual order override: #42 independent; #41 after #39/#40/#42"
     }
   ]
 }

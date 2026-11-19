@@ -100,16 +100,15 @@ The cosine similarity at or above which two facts count as duplicates. A number 
 
 ### `mirror_builtin_memory`
 
-Whether Hermes built-in memory writes (`USER.md`, `MEMORY.md`) are mirrored into the graph, one fact per entry.
+Whether writes made with Hermes's built-in `memory` tool (`USER.md`, `MEMORY.md`) are mirrored into the graph, one fact per entry. The mirror is relatedb's view of what the model chose to remember with that tool. The hook handles only the tool's two targets, `memory` and `user`; it logs and ignores any other target.
 
 **Why you might turn it off.** Hermes already injects both files into every session, so a mirrored entry mostly duplicates what the agent already sees, and the mirror is a second copy that can drift. Turn the setting off to avoid that.
 
-**What you give up.** History and `relatedb_as_of` queries over built-in entries: with the mirror off, the graph does not record when an entry was added, changed or removed.
+**What you give up.** relatedb no longer sees `memory`-tool writes at all, so `relatedb_remember` becomes the only explicit write path. You also lose history and `relatedb_as_of` queries over built-in entries: with the mirror off, the graph does not record when an entry was added, changed or removed.
 
 **Behaviour when `false`:**
 
 - `add`, `replace`, `patch` and `remove` on the built-in targets (`user`, `memory`) write no fact, close no fact and do not call the embedder.
-- Writes to explicit slots, such as `prefs/editor`, still record facts as before.
 - Facts that were already mirrored stay in the store and in recall until forgotten. Switching the setting off does not delete them.
 - Switching it back on mirrors only new writes. Entries written while it was off are not backfilled, so re-add any you want in the graph (for example with `relatedb_remember`).
 

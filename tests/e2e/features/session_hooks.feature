@@ -15,11 +15,16 @@ Feature: Turn sync, memory-write mirroring, and pre-compression hooks
 
   Scenario: Built-in memory tool mirroring add, replace, and remove
     Given an initialized RelateDBMemoryProvider for session "s-mirror"
+    When on_memory_write "add" records "User prefers vim" in target "user"
+    And on_memory_write "replace" updates "user" to "User prefers neovim"
+    Then the active fact for "user" is "User prefers neovim" and the old fact is closed
+    When on_memory_write "remove" closes "user"
+    Then "user" has zero active facts
+
+  Scenario: Memory writes to targets other than memory and user are ignored
+    Given an initialized RelateDBMemoryProvider for session "s-mirror"
     When on_memory_write "add" records "User prefers vim" in target "prefs/editor"
-    And on_memory_write "replace" updates "prefs/editor" to "User prefers neovim"
-    Then the active fact for "prefs/editor" is "User prefers neovim" and the old fact is closed
-    When on_memory_write "remove" closes "prefs/editor"
-    Then "prefs/editor" has zero active facts
+    Then zero Episode or Fact nodes are written
 
   Scenario: Pre-compression flush and session switching
     Given an initialized RelateDBMemoryProvider for session "s-old"

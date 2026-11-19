@@ -85,7 +85,9 @@ def memory_write_replace(world, target, content):
 
 @when(parsers.parse('on_memory_write "remove" closes "{target}"'))
 def memory_write_remove(world, target):
-    world.provider.on_memory_write("remove", target, "")
+    world.provider.on_memory_write(
+        "remove", target, "", metadata={"previous_content": "User prefers neovim"}
+    )
 
 
 @when("on_pre_compress runs on messages about to be truncated")
@@ -138,13 +140,16 @@ def zero_nodes_written(world):
 
 @then(parsers.parse('the active fact for "{target}" is "{expected}" and the old fact is closed'))
 def active_fact_updated_and_old_closed(world, target, expected):
+    # Built-in targets keep one slot per entry under builtin/<target>/.
     open_facts = world.provider.store.run(
-        "MATCH (f:Fact {slot: $slot}) WHERE f.closedAt IS NULL RETURN f.text AS text",
-        slot=target,
+        "MATCH (f:Fact) WHERE f.slot STARTS WITH $prefix AND f.closedAt IS NULL "
+        "RETURN f.text AS text",
+        prefix=f"builtin/{target}/",
     )
     closed_facts = world.provider.store.run(
-        "MATCH (f:Fact {slot: $slot}) WHERE f.closedAt IS NOT NULL RETURN f.text AS text",
-        slot=target,
+        "MATCH (f:Fact) WHERE f.slot STARTS WITH $prefix AND f.closedAt IS NOT NULL "
+        "RETURN f.text AS text",
+        prefix=f"builtin/{target}/",
     )
     assert [r["text"] for r in open_facts] == [expected]
     assert len(closed_facts) == 1
@@ -153,8 +158,9 @@ def active_fact_updated_and_old_closed(world, target, expected):
 @then(parsers.parse('"{target}" has zero active facts'))
 def target_has_zero_active_facts(world, target):
     open_facts = world.provider.store.run(
-        "MATCH (f:Fact {slot: $slot}) WHERE f.closedAt IS NULL RETURN f.id AS id",
-        slot=target,
+        "MATCH (f:Fact) WHERE f.slot STARTS WITH $prefix AND f.closedAt IS NULL "
+        "RETURN f.id AS id",
+        prefix=f"builtin/{target}/",
     )
     assert open_facts == []
 

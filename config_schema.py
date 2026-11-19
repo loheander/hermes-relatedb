@@ -96,8 +96,10 @@ CONFIG_SCHEMA = ProviderConfigSchema(
             kind=KIND_BOOL,
             default="true",
             description=(
-                "Mirror Hermes built-in memory writes into the graph for history and relatedb_as_of. "
-                "Turn off to avoid a second copy of what Hermes already injects. "
+                "Mirror writes made with the built-in memory tool (USER.md, MEMORY.md) into the graph: "
+                "relatedb's view of what the model chose to remember, with history and relatedb_as_of. "
+                "Turn off to avoid a second copy of what Hermes already injects; relatedb then no longer "
+                "sees memory-tool writes and relatedb_remember is the only explicit write path. "
                 "Facts already mirrored stay until forgotten."
             ),
             group="Recall",

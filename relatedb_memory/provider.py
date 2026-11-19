@@ -126,12 +126,23 @@ _TOOL_SCHEMAS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "relatedb_remember",
-            "description": "Store or update a durable fact in RelateDB memory, superseding any open fact in the same slot.",
+            "description": (
+                "Store or update a durable fact in RelateDB memory, superseding any open fact in the same slot. "
+                "Prefer this over the built-in `memory` tool for facts with a stable, natural key that a later "
+                "value replaces (a preference, an owner, a current status, a version). To update such a fact, "
+                "reuse its slot. Keep free-form notes without such a key in the built-in `memory` tool."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "text": {"type": "string", "description": "The fact text to remember."},
-                    "slot": {"type": "string", "description": "Unique slot key (e.g. 'project/owner')."},
+                    "slot": {
+                        "type": "string",
+                        "description": (
+                            "Stable key for the fact: short, lowercase, '/'-separated, general to specific, "
+                            "the same across sessions (e.g. 'prefs/editor', 'project/<slug>/owner')."
+                        ),
+                    },
                     "about": {
                         "type": "array",
                         "items": {"type": "string"},

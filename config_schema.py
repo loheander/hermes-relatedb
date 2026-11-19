@@ -74,5 +74,21 @@ CONFIG_SCHEMA = ProviderConfigSchema(
             description="Largest share of the facts per turn that captured transcript turns may fill (0 to 1).",
             group="Recall",
         ),
+        ProviderField(
+            key="dedupe",
+            label="Collapse near-duplicates",
+            kind=KIND_BOOL,
+            default="true",
+            description="Flag near-duplicate facts on write and return one hit per duplicate cluster in recall.",
+            group="Recall",
+        ),
+        ProviderField(
+            key="dedupe_threshold",
+            label="Duplicate threshold",
+            kind=KIND_NUMBER,
+            default="0.92",
+            description="Cosine similarity at or above which two facts count as duplicates (0 to 1).",
+            group="Recall",
+        ),
     ),
 )

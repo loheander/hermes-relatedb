@@ -355,3 +355,21 @@ def test_captured_share_default_env_and_validation(tmp_path):
     for bad in ("2", "-0.1", "lots"):
         with pytest.raises(ValueError, match="captured_share"):
             resolve(tmp_path, {"RELATEDB_CAPTURED_SHARE": bad})
+
+
+def test_dedupe_defaults_env_and_validation(tmp_path):
+    c = resolve(tmp_path, {})
+    assert c.dedupe is cfg.DEFAULT_DEDUPE is True
+    assert c.dedupe_threshold == cfg.DEFAULT_DEDUPE_THRESHOLD == 0.92
+    c = resolve(tmp_path, {"RELATEDB_DEDUPE": "off", "RELATEDB_DEDUPE_THRESHOLD": "0.8"})
+    assert c.dedupe is False and c.dedupe_threshold == 0.8
+    with pytest.raises(ValueError, match="dedupe_threshold"):
+        resolve(tmp_path, {"RELATEDB_DEDUPE_THRESHOLD": "1.5"})
+    with pytest.raises(ValueError, match="dedupe"):
+        resolve(tmp_path, {"RELATEDB_DEDUPE": "maybe"})
+
+
+def test_dedupe_schema_defaults_match_runtime(schema_module):
+    fields = {f.key: f for f in schema_module.CONFIG_SCHEMA.fields}
+    assert (fields["dedupe"].default == "true") is cfg.DEFAULT_DEDUPE
+    assert float(fields["dedupe_threshold"].default) == cfg.DEFAULT_DEDUPE_THRESHOLD

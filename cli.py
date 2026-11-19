@@ -39,6 +39,30 @@ def _detect_codec(store_path: Path) -> str:
     return "rl"
 
 
+def _create_json_store(store_path: Path) -> None:
+    """Create an empty JSON-codec directory store with the ``relate`` Python package.
+
+    The ``relate-db`` wheel does not ship the ``relate`` CLI binary, so this must not
+    shell out to it. The codec is chosen by ``RELATE_SNAPSHOT_FORMAT`` at connect time.
+    """
+    import relate
+
+    previous = os.environ.get("RELATE_SNAPSHOT_FORMAT")
+    os.environ["RELATE_SNAPSHOT_FORMAT"] = "json"
+    try:
+        store_path.mkdir(parents=True, exist_ok=True)
+        conn = relate.connect(str(store_path))
+        try:
+            conn.execute("RETURN 1")
+        finally:
+            conn.close()
+    finally:
+        if previous is None:
+            os.environ.pop("RELATE_SNAPSHOT_FORMAT", None)
+        else:
+            os.environ["RELATE_SNAPSHOT_FORMAT"] = previous
+
+
 def _cmd_init_diffable(args: argparse.Namespace) -> int:
     store_path = Path(args.path or "./memory").expanduser().resolve()
     if store_path.exists() and any(store_path.iterdir()):
@@ -46,12 +70,7 @@ def _cmd_init_diffable(args: argparse.Namespace) -> int:
             print(json.dumps({"error": f"Target directory is not empty: {store_path}"}), file=sys.stderr)
             return 1
     else:
-        subprocess.run(
-            ["relate", "--database", str(store_path), "--snapshot-format", "json", "-c", "RETURN 1"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        _create_json_store(store_path)
 
     cwd = Path.cwd()
     git_root_proc = subprocess.run(

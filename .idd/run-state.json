@@ -1,30 +1,46 @@
 {
   "version": 1,
-  "run_id": "20261117T091514Z-4149913",
-  "started_at": "2026-11-17T09:16:30Z",
-  "updated_at": "2026-11-17T09:36:20Z",
+  "run_id": "20261119T132540Z-895570",
+  "started_at": "2026-11-19T13:25:44Z",
+  "updated_at": "2026-11-19T13:45:13Z",
   "invocation": "/auto-pilot",
   "mode": "balanced",
   "limit": 10,
   "queue": [],
-  "phase": "triage",
+  "phase": "merge",
   "lanes": [],
-  "current": null,
+  "current": {
+    "branch": "test/41-replace-specs-memory-schema-md-with-an",
+    "issue": 41,
+    "outcome": "merged",
+    "phase": "merge",
+    "pr": 47,
+    "started_at": null,
+    "title": null
+  },
   "processed": [
     {
-      "issue": 35,
+      "issue": 42,
       "outcome": "merged",
-      "pr": 36
+      "pr": 44
     },
     {
-      "issue": 34,
+      "issue": 39,
       "outcome": "merged",
-      "pr": 37
+      "pr": 45
+    },
+    {
+      "issue": 40,
+      "outcome": "merged",
+      "pr": 46
+    },
+    {
+      "issue": 41,
+      "outcome": "merged",
+      "pr": 47
     }
   ],
-  "skip_list": [
-    33
-  ],
+  "skip_list": [],
   "report_path": null,
   "borrowed_skills": []
 }

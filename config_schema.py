@@ -90,5 +90,17 @@ CONFIG_SCHEMA = ProviderConfigSchema(
             description="Cosine similarity at or above which two facts count as duplicates (0 to 1).",
             group="Recall",
         ),
+        ProviderField(
+            key="mirror_builtin_memory",
+            label="Mirror USER.md/MEMORY.md",
+            kind=KIND_BOOL,
+            default="true",
+            description=(
+                "Mirror Hermes built-in memory writes into the graph for history and relatedb_as_of. "
+                "Turn off to avoid a second copy of what Hermes already injects. "
+                "Facts already mirrored stay until forgotten."
+            ),
+            group="Recall",
+        ),
     ),
 )

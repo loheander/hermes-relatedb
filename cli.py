@@ -162,6 +162,54 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def _cmd_dedupe(args: argparse.Namespace) -> int:
+    import dataclasses
+
+    import relate
+
+    from relatedb_memory import dedupe as dd
+    from relatedb_memory.config import resolve_config
+    from relatedb_memory.schema import get_vector_index_dim
+    from relatedb_memory.store import RelateStore
+
+    store_path = _resolve_store_path(args.path)
+    home = os.environ.get("HERMES_HOME") or str(Path.home() / ".hermes")
+    config = resolve_config(home)
+    threshold = config.dedupe_threshold if args.threshold is None else dd.validate_threshold(args.threshold)
+
+    if args.dry_run:
+        # Read-only connection: a dry run cannot write.
+        conn = relate.connect(str(store_path), read_only=True)
+        try:
+            changes = dd.plan_links(conn, threshold)
+        finally:
+            conn.close()
+    else:
+        conn = relate.connect(str(store_path), read_only=True)
+        try:
+            dim = get_vector_index_dim(conn)
+        finally:
+            conn.close()
+        if dim is None:
+            print(json.dumps({"error": f"No fact embedding index in {store_path}"}), file=sys.stderr)
+            return 1
+        with RelateStore.open(dataclasses.replace(config, db_path=store_path), embedding_dim=dim) as store:
+            changes = store.dedupe_facts(threshold)
+
+    print(
+        json.dumps(
+            {
+                "path": str(store_path),
+                "threshold": threshold,
+                "dry_run": bool(args.dry_run),
+                "links": [c for c in changes if c["action"] == "link"],
+                "unlinks": [c for c in changes if c["action"] == "unlink"],
+            }
+        )
+    )
+    return 0
+
+
 def _cmd_mcp(args: argparse.Namespace) -> int:
     store_path = _resolve_store_path(args.path)
     cmd_args = ["serve", "--mcp", "stdio", "--database", str(store_path)]
@@ -208,6 +256,12 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
     p_verify = subparser.add_parser("verify", help="Verify bi-temporal slot-uniqueness invariants")
     p_verify.add_argument("--path", default=None, help="Store path override")
     p_verify.set_defaults(_handler=_cmd_verify)
+
+    p_dedupe = subparser.add_parser("dedupe", help="Flag near-duplicate open facts with DUPLICATE_OF edges")
+    p_dedupe.add_argument("--path", default=None, help="Store path override")
+    p_dedupe.add_argument("--threshold", type=float, default=None, help="Cosine threshold (default: dedupe_threshold)")
+    p_dedupe.add_argument("--dry-run", action="store_true", help="List proposed links and write nothing")
+    p_dedupe.set_defaults(_handler=_cmd_dedupe)
 
     p_mcp = subparser.add_parser("mcp", help="Output or launch Relate stdio MCP sidecar configuration")
     p_mcp.add_argument("--path", default=None, help="Store path override")

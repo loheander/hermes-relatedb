@@ -162,6 +162,8 @@ memory:
     prefetch_top_k: 8
     auto_extract: true
     captured_share: 0.5
+    dedupe: true
+    dedupe_threshold: 0.92
 ```
 
 | Key | Default | Meaning |
@@ -172,8 +174,12 @@ memory:
 | `prefetch_top_k` | `8` | How many facts are added to context before each turn. |
 | `auto_extract` | `true` | Extract facts from conversation turns automatically. |
 | `captured_share` | `0.5` | Largest share of recalled facts that captured turns (`turn`, `pre_compress`) may fill. Remembered facts (`remember`, `memory_write`) are always eligible. `0` excludes captured facts, `1` removes the cap. |
+| `dedupe` | `true` | Flag near-duplicate facts on write and return one hit per duplicate cluster in recall, annotated `seen=N` (distinct episodes). `false` restores plain recall. |
+| `dedupe_threshold` | `0.92` | Cosine similarity at or above which two facts count as duplicates. Facts in different explicit slots are never merged. |
 
-Each key can be overridden with an environment variable: `RELATEDB_SNAPSHOT_FORMAT`, `RELATEDB_DB_PATH`, `RELATEDB_EMBEDDING_MODEL`, `RELATEDB_PREFETCH_TOP_K`, `RELATEDB_AUTO_EXTRACT`, `RELATEDB_CAPTURED_SHARE`. Environment variables take precedence over `config.yaml`. Each Hermes profile has its own store and settings.
+Each key can be overridden with an environment variable: `RELATEDB_SNAPSHOT_FORMAT`, `RELATEDB_DB_PATH`, `RELATEDB_EMBEDDING_MODEL`, `RELATEDB_PREFETCH_TOP_K`, `RELATEDB_AUTO_EXTRACT`, `RELATEDB_CAPTURED_SHARE`, `RELATEDB_DEDUPE`, `RELATEDB_DEDUPE_THRESHOLD`. Environment variables take precedence over `config.yaml`. Each Hermes profile has its own store and settings.
+
+To link duplicates in a store that existed before, run `hermes relatedb-memory dedupe`; add `--dry-run` to list the proposed links (fact ids and scores) without writing. The pass is idempotent.
 
 ### Keeping memory in git
 

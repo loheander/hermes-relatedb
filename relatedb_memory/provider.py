@@ -263,6 +263,8 @@ def _format_recall_block(hits: list[dict[str, Any]]) -> str:
             if origin in _CAPTURED_ORIGINS:
                 label += " transcript, unconfirmed"
             meta.append(label)
+        if (hit.get("seen") or 0) > 1:
+            meta.append(f"seen={hit['seen']}")
         if hit.get("replaced"):
             meta.append(f"replaces={'; '.join(hit['replaced'])}")
         if meta:
@@ -365,7 +367,7 @@ class RelateDBMemoryProvider(_Base):
         def _worker() -> None:
             try:
                 vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
-                hits = store.vector_recall(vec, k=top_k, captured_share=self._config.captured_share)
+                hits = store.vector_recall(vec, k=top_k, captured_share=self._config.captured_share, dedupe=self._config.dedupe)
             except Exception:
                 return
             with self._prefetch_lock:
@@ -407,6 +409,7 @@ class RelateDBMemoryProvider(_Base):
                 vec,
                 k=self._config.prefetch_top_k,
                 captured_share=self._config.captured_share,
+                dedupe=self._config.dedupe,
             )
 
         if not hits:
@@ -465,11 +468,22 @@ class RelateDBMemoryProvider(_Base):
                 embedding=embedder.embed_one(combined),
                 origin="turn",
             )
+            self._flag_duplicates(store, f"f-{uid}")
 
         thread = _spawn_bg(_worker, name="relatedb-sync-turn")
         with self._sync_lock:
             self._sync_threads = [t for t in self._sync_threads if t.is_alive()]
             self._sync_threads.append(thread)
+
+    def _flag_duplicates(self, store: RelateStore, fact_id: str) -> None:
+        """Link a freshly written fact to its near-duplicates; never fails the write."""
+        cfg = self._config
+        if cfg is None or not cfg.dedupe:
+            return
+        try:
+            store.dedupe_facts(cfg.dedupe_threshold, fact_ids=[fact_id])
+        except Exception:
+            _LOG.warning("relatedb: dedupe of %s failed", fact_id, exc_info=True)
 
     def flush_sync(self, timeout: float | None = 5.0) -> None:
         with self._sync_lock:
@@ -542,6 +556,8 @@ class RelateDBMemoryProvider(_Base):
             supersedes_slot=old_slot,
             origin="memory_write",
         )
+        if vec is not None:
+            self._flag_duplicates(store, f"f-mw-{uid}")
 
     @staticmethod
     def _resolve_builtin_slot(
@@ -606,6 +622,8 @@ class RelateDBMemoryProvider(_Base):
             embedding=vec,
             origin="pre_compress",
         )
+        if vec is not None:
+            self._flag_duplicates(store, f"f-pc-{uid}")
 
     def on_session_switch(self, new_session_id: str, *, reset: bool = False) -> None:
         if reset:
@@ -689,6 +707,8 @@ class RelateDBMemoryProvider(_Base):
                 embedding=vec,
                 origin="remember",
             )
+            if vec is not None:
+                self._flag_duplicates(store, fact_id)
             return json.dumps({"status": "ok", "fact_id": fact_id, "slot": slot})
 
         if tool_name == "relatedb_forget":
@@ -717,6 +737,7 @@ class RelateDBMemoryProvider(_Base):
                 vec,
                 k=k,
                 captured_share=self._config.captured_share if self._config else _config.DEFAULT_CAPTURED_SHARE,
+                dedupe=self._config.dedupe if self._config else _config.DEFAULT_DEDUPE,
             )
             return json.dumps({"results": hits}, default=str)
 
@@ -859,6 +880,20 @@ class RelateDBMemoryProvider(_Base):
                 "key": "captured_share",
                 "description": "Largest share of recalled facts that captured turns may fill (0 to 1)",
                 "default": _config.DEFAULT_CAPTURED_SHARE,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+            },
+            {
+                "key": "dedupe",
+                "description": "Flag near-duplicate facts and collapse them in recall",
+                "default": _config.DEFAULT_DEDUPE,
+                "type": "boolean",
+            },
+            {
+                "key": "dedupe_threshold",
+                "description": "Cosine similarity at or above which two facts count as duplicates (0 to 1)",
+                "default": _config.DEFAULT_DEDUPE_THRESHOLD,
                 "type": "number",
                 "minimum": 0,
                 "maximum": 1,

@@ -13,6 +13,7 @@ from concurrent.futures import Future
 from dataclasses import dataclass
 from typing import Any
 
+from . import dedupe as _dedupe
 from .config import RelateDBConfig
 from .embedder import format_vector
 from .schema import (
@@ -407,12 +408,43 @@ class RelateStore:
         )
         return [row["slot"] for row in rows]
 
+    def dedupe_facts(
+        self,
+        threshold: float = _dedupe.DEFAULT_DEDUPE_THRESHOLD,
+        *,
+        fact_ids: Sequence[str] | None = None,
+        dry_run: bool = False,
+        top_n: int = _dedupe.DEFAULT_TOP_N,
+        detected_at: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Flag near-duplicate open facts with ``DUPLICATE_OF`` edges (ADR-0008).
+
+        With ``fact_ids`` the pass covers those facts, their neighbours and the
+        clusters they touch (the on-write path); otherwise every open fact. Returns
+        the changes made, or only proposed when ``dry_run``. Idempotent. Writes run
+        in small batches through the single writer queue.
+        """
+        threshold = _dedupe.validate_threshold(threshold)
+        ids = None if fact_ids is None else list(fact_ids)
+        changes = self.submit(
+            lambda conn: _dedupe.plan_links(conn, threshold, fact_ids=ids, top_n=top_n),
+            timeout=max(self._call_timeout, 600.0),
+        )
+        if dry_run or not changes:
+            return changes
+        stamp = detected_at or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        for i in range(0, len(changes), _dedupe.WRITE_BATCH):
+            batch = changes[i : i + _dedupe.WRITE_BATCH]
+            self.submit(lambda conn, b=batch: _dedupe.apply_changes(conn, b, stamp))
+        return changes
+
     def vector_recall(
         self,
         query_vector: Sequence[float],
         *,
         k: int = 8,
         captured_share: float = DEFAULT_CAPTURED_SHARE,
+        dedupe: bool = False,
     ) -> list[dict[str, Any]]:
         """Run pre-filtered vector recall over open facts (``closedAt IS NULL``).
 
@@ -420,6 +452,9 @@ class RelateStore:
         Captured facts (``turn``, ``pre_compress``) fill at most
         ``max(1, floor(k * captured_share))`` of the ``k`` results, or none when
         ``captured_share`` is 0 (ADR-0007). Each hit carries its ``origin``.
+
+        With ``dedupe`` each duplicate cluster yields one hit, the canonical fact,
+        carrying ``seen``: the number of distinct episodes that support it (ADR-0008).
         """
         if isinstance(k, bool) or not isinstance(k, int) or k < 1:
             raise ValueError(f"k must be a positive integer, got {k!r}")
@@ -441,12 +476,15 @@ class RelateStore:
             "round(score, 4) AS score, "
             "COLLECT { MATCH (f)-[:ABOUT]->(e:Entity) RETURN e.key ORDER BY e.key } AS about, "
             "ep.id AS ep_id, ep.kind AS ep_kind, ep.text AS ep_text, "
-            "COLLECT { MATCH (f)-[:SUPERSEDES]->(old:Fact) RETURN old.text } AS replaced "
+            "COLLECT { MATCH (f)-[:SUPERSEDES]->(old:Fact) RETURN old.text } AS replaced, "
+            "COLLECT { MATCH (f)-[:DUPLICATE_OF]->(c:Fact) WHERE c.closedAt IS NULL RETURN c.id } AS canon "
             "ORDER BY score DESC",
             q=vec,
             dim=self._embedding_dim,
             pool=pool,
         )
+        if dedupe:
+            rows = self._collapse_duplicates(rows)
         captured_cap = 0 if captured_share <= 0 else max(1, int(k * captured_share))
         hits: list[dict[str, Any]] = []
         captured = 0
@@ -470,11 +508,56 @@ class RelateStore:
                         "text": row["ep_text"],
                     },
                     "replaced": row["replaced"],
+                    **({"seen": row["seen"]} if dedupe else {}),
                 }
             )
             if len(hits) >= k:
                 break
         return hits
+
+    def _collapse_duplicates(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Replace duplicates by their canonical fact and add ``seen`` to every row.
+
+        A canonical missing from the candidate pool is fetched and takes the best
+        score of its duplicates. ``seen`` counts distinct episodes across the open
+        cluster, so repeating a statement within one episode adds nothing.
+        """
+        by_id = {r["id"]: r for r in rows}
+        wanted: dict[str, float] = {}
+        for r in rows:
+            for cid in r["canon"]:
+                if cid not in by_id:
+                    wanted[cid] = max(wanted.get(cid, r["score"]), r["score"])
+        if wanted:
+            for r in self.run(
+                "MATCH (f:Fact) WHERE f.id IN $ids AND f.closedAt IS NULL "
+                "MATCH (f)-[:FROM]->(ep:Episode) "
+                "RETURN f.id AS id, f.text AS text, f.slot AS slot, f.origin AS origin, "
+                "COLLECT { MATCH (f)-[:ABOUT]->(e:Entity) RETURN e.key ORDER BY e.key } AS about, "
+                "ep.id AS ep_id, ep.kind AS ep_kind, ep.text AS ep_text, "
+                "COLLECT { MATCH (f)-[:SUPERSEDES]->(old:Fact) RETURN old.text } AS replaced",
+                ids=sorted(wanted),
+            ):
+                by_id.setdefault(r["id"], {**r, "score": wanted[r["id"]], "canon": []})
+        survivors: dict[str, dict[str, Any]] = {}
+        for r in rows:
+            target = by_id[r["canon"][0]] if r["canon"] else r
+            if target["id"] not in survivors:
+                survivors[target["id"]] = {**target, "score": max(target["score"], r["score"])}
+            else:
+                survivors[target["id"]]["score"] = max(survivors[target["id"]]["score"], r["score"])
+        ids = sorted(survivors)
+        episodes: dict[str, set[str]] = {i: {survivors[i]["ep_id"]} for i in ids}
+        for r in self.run(
+            "MATCH (d:Fact)-[:DUPLICATE_OF]->(c:Fact) "
+            "WHERE c.id IN $ids AND d.closedAt IS NULL AND c.closedAt IS NULL "
+            "MATCH (d)-[:FROM]->(e:Episode) RETURN c.id AS cid, e.id AS eid",
+            ids=ids,
+        ):
+            episodes[r["cid"]].add(r["eid"])
+        out = [{**survivors[i], "seen": len(episodes[i])} for i in ids]
+        out.sort(key=lambda r: (-r["score"], r["id"]))
+        return out
 
     def close(self, timeout: float | None = None) -> None:
         """Flush pending operations and close the connection on its owning thread."""

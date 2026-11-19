@@ -17,6 +17,7 @@ and says how the fact was captured. Recall ranks by it as decided in ADR-0007.
 ## Relationships
 
 `(:Episode)-[:ASSERTS]->(:Fact)` and `(:Fact)-[:ABOUT]->(:Entity)`. A
+`(:Fact)-[:DUPLICATE_OF {score, detectedAt}]->(:Fact)` flags a near-duplicate open fact and points at its canonical fact, as decided in ADR-0008. A
 correction sets `valid_to` on the old fact and adds a new one; see ADR-0001.
 
 ## Access

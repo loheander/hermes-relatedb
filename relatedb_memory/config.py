@@ -29,6 +29,8 @@ DEFAULT_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_PREFETCH_TOP_K = 8
 DEFAULT_AUTO_EXTRACT = True
 DEFAULT_CAPTURED_SHARE = 0.5
+DEFAULT_DEDUPE = True
+DEFAULT_DEDUPE_THRESHOLD = 0.92
 
 CONFIG_FILENAME = "config.yaml"
 PROVIDER_NAME = "relatedb-memory"
@@ -42,6 +44,8 @@ ENV_VARS = {
     "prefetch_top_k": "RELATEDB_PREFETCH_TOP_K",
     "auto_extract": "RELATEDB_AUTO_EXTRACT",
     "captured_share": "RELATEDB_CAPTURED_SHARE",
+    "dedupe": "RELATEDB_DEDUPE",
+    "dedupe_threshold": "RELATEDB_DEDUPE_THRESHOLD",
 }
 
 _TRUE = {"1", "true", "yes", "on"}
@@ -59,6 +63,8 @@ class RelateDBConfig:
     prefetch_top_k: int = DEFAULT_PREFETCH_TOP_K
     auto_extract: bool = DEFAULT_AUTO_EXTRACT
     captured_share: float = DEFAULT_CAPTURED_SHARE
+    dedupe: bool = DEFAULT_DEDUPE
+    dedupe_threshold: float = DEFAULT_DEDUPE_THRESHOLD
 
 
 def default_db_path(hermes_home: str | os.PathLike[str], snapshot_format: str) -> Path:
@@ -204,6 +210,8 @@ def resolve_config(
     top_k_raw = pick("prefetch_top_k")
     auto_raw = pick("auto_extract")
     share_raw = pick("captured_share")
+    dedupe_raw = pick("dedupe")
+    dedupe_thr_raw = pick("dedupe_threshold")
     return RelateDBConfig(
         hermes_home=home,
         db_path=db_path,
@@ -212,6 +220,12 @@ def resolve_config(
         prefetch_top_k=DEFAULT_PREFETCH_TOP_K if top_k_raw is None else _parse_top_k(top_k_raw),
         auto_extract=DEFAULT_AUTO_EXTRACT if auto_raw is None else _parse_bool(auto_raw, "auto_extract"),
         captured_share=DEFAULT_CAPTURED_SHARE if share_raw is None else _parse_share(share_raw),
+        dedupe=DEFAULT_DEDUPE if dedupe_raw is None else _parse_bool(dedupe_raw, "dedupe"),
+        dedupe_threshold=(
+            DEFAULT_DEDUPE_THRESHOLD
+            if dedupe_thr_raw is None
+            else _parse_share(dedupe_thr_raw, "dedupe_threshold")
+        ),
     )
 
 
@@ -222,6 +236,8 @@ _VALIDATORS: dict[str, Callable[[Any, str], Any]] = {
     "prefetch_top_k": lambda v, k: _parse_top_k(v, k),
     "auto_extract": _parse_bool,
     "captured_share": _parse_share,
+    "dedupe": _parse_bool,
+    "dedupe_threshold": lambda v, k: _parse_share(v, k),
 }
 
 

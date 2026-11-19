@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Near-duplicate open facts are linked with `DUPLICATE_OF` edges on write and by `hermes relatedb-memory dedupe [--dry-run]`. Recall returns one hit per cluster with `seen=N` distinct supporting episodes. New settings `dedupe` (default `true`) and `dedupe_threshold` (default `0.92`) (#40, ADR-0008).
 
+### Changed
+
+- The memory graph schema is now an executable e2e contract, `tests/e2e/features/memory_schema.feature`, replacing the former, drifted memory schema spec (#41).
+
 ### Fixed
 
 - `on_memory_write` now keeps one slot per `USER.md`/`MEMORY.md` entry instead of one per file, so `add`, `replace` and `remove` affect only the entry they name (#42). Stores written by earlier versions need a one-off resync: re-add the entries that exist now and leave the history as it is.

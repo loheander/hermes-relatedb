@@ -1,6 +1,6 @@
 """Thread-affine RelateDB store engine with a bounded single-writer queue.
 
-See ADR-0002, ADR-0005, and specs/memory-schema.md.
+See ADR-0002, ADR-0005, and tests/e2e/features/memory_schema.feature.
 """
 
 from __future__ import annotations

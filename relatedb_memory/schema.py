@@ -1,6 +1,6 @@
 """Bi-temporal Entity-Episode-Fact graph schema for RelateDB.
 
-See ADR-0001 and specs/memory-schema.md.
+See ADR-0001 and tests/e2e/features/memory_schema.feature.
 """
 
 from __future__ import annotations

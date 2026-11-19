@@ -66,5 +66,13 @@ CONFIG_SCHEMA = ProviderConfigSchema(
             description="Extract facts from turns in the background.",
             group="Recall",
         ),
+        ProviderField(
+            key="captured_share",
+            label="Captured share of recall",
+            kind=KIND_NUMBER,
+            default="0.5",
+            description="Largest share of the facts per turn that captured transcript turns may fill (0 to 1).",
+            group="Recall",
+        ),
     ),
 )

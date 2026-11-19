@@ -347,3 +347,11 @@ def test_schema_defaults_match_runtime(schema_module):
     assert int(fields["prefetch_top_k"].default) == cfg.DEFAULT_PREFETCH_TOP_K
     assert (fields["auto_extract"].default == "true") is cfg.DEFAULT_AUTO_EXTRACT
     assert {o.value for o in fields["snapshot_format"].options} == set(cfg.SNAPSHOT_FORMATS)
+
+
+def test_captured_share_default_env_and_validation(tmp_path):
+    assert resolve(tmp_path, {}).captured_share == cfg.DEFAULT_CAPTURED_SHARE == 0.5
+    assert resolve(tmp_path, {"RELATEDB_CAPTURED_SHARE": "0.25"}).captured_share == 0.25
+    for bad in ("2", "-0.1", "lots"):
+        with pytest.raises(ValueError, match="captured_share"):
+            resolve(tmp_path, {"RELATEDB_CAPTURED_SHARE": bad})

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Each fact now has an `origin` (`turn`, `pre_compress`, `memory_write`, `remember`). Recall always admits deliberate facts, caps captured facts at `captured_share` of `k` (default `0.5`) and labels hits with their origin (#39, ADR-0007).
+- `tools/backfill_origins.py` sets `origin` on existing stores from the episode kind. It is idempotent. Run it once per store: `uv run python tools/backfill_origins.py --db-path ~/.hermes/memory`. Facts without an origin are still ranked correctly, derived from their episode kind at recall time.
+
 ### Fixed
 
 - `on_memory_write` now keeps one slot per `USER.md`/`MEMORY.md` entry instead of one per file, so `add`, `replace` and `remove` affect only the entry they name (#42). Stores written by earlier versions need a one-off resync: re-add the entries that exist now and leave the history as it is.

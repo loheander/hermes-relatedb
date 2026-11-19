@@ -496,40 +496,46 @@ class RelateDBMemoryProvider(_Base):
     def on_memory_write(
         self,
         action: str,
-        target: str = "memory/default",
+        target: str,
         content: str = "",
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Mirror a built-in ``memory`` tool write (target ``memory`` or ``user``).
+
+        Hermes calls this only after its built-in ``memory`` tool, whose
+        ``target`` is limited to ``memory`` and ``user``. Any other target is
+        logged and ignored; explicit slots are written with ``relatedb_remember``.
+        """
         if self._config is None:
             return
-        store = self._ensure_store()
-        embedder = self._embedder
-        target = (target or "memory/default").strip()
         normalized_action = action.strip().lower()
         if normalized_action not in {"add", "replace", "patch", "remove"}:
             raise ValueError(f"Unsupported memory_write action: {action!r}")
+        raw_target = target
+        target = (target or "").strip().lower()
+        if target not in _BUILTIN_TARGETS:
+            _LOG.warning(
+                "relatedb: on_memory_write ignores target %r; only 'memory' and 'user' are mirrored",
+                raw_target,
+            )
+            return
+        if not self._config.mirror_builtin_memory:
+            return
+        store = self._ensure_store()
+        embedder = self._embedder
         meta = metadata or {}
-        builtin = target.lower() in _BUILTIN_TARGETS
-        if builtin:
-            target = target.lower()
-            if not self._config.mirror_builtin_memory:
-                return
         now = _utc_now_iso()
         uid = uuid.uuid4().hex[:12]
         active_session = self._session_id or "default"
 
-        # Built-in files hold many entries: one slot per entry. Other targets are
-        # explicit slots and keep one open fact per slot.
+        # Built-in files hold many entries: one slot per entry.
         old_slot: str | None = None
-        if builtin:
-            slot = _builtin_slot(target, content)
-            if normalized_action == "remove":
-                old_slot = self._resolve_builtin_slot(store, target, content, meta, use_content=True)
-                slot = old_slot or slot
-            elif normalized_action in {"replace", "patch"}:
-                old_slot = self._resolve_builtin_slot(store, target, content, meta, use_content=False)
-        else:
-            slot = target
+        slot = _builtin_slot(target, content)
+        if normalized_action == "remove":
+            old_slot = self._resolve_builtin_slot(store, target, content, meta, use_content=True)
+            slot = old_slot or slot
+        elif normalized_action in {"replace", "patch"}:
+            old_slot = self._resolve_builtin_slot(store, target, content, meta, use_content=False)
 
         store.record_episode(
             episode_id=f"ep-mw-{uid}",
@@ -539,7 +545,7 @@ class RelateDBMemoryProvider(_Base):
             text=f"{action} {slot}: {content}".strip(),
         )
         if normalized_action == "remove":
-            if builtin and old_slot is None:
+            if old_slot is None:
                 _LOG.warning(
                     "relatedb: remove on %r matched no single open entry; nothing closed", target
                 )

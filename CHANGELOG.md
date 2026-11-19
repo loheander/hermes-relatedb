@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `on_memory_write` now handles only the built-in `memory` tool's targets, `memory` and `user` (case-insensitive). Any other target logs a warning and writes, closes and embeds nothing, and `target` no longer defaults to `memory/default`. Hermes only calls the hook after a `memory` tool write, whose `target` is limited to those two values, so the explicit-slot branch was reachable only from direct calls. Write explicit slots such as `prefs/editor` with `relatedb_remember` (#50).
+
+### Fixed
+
+- Corrected the 1.2.0 note for `mirror_builtin_memory` (#48): explicit slots never recorded through `on_memory_write` in practice. The mirror is relatedb's view of built-in `memory` tool writes; with it off, relatedb no longer sees those writes and `relatedb_remember` is the only explicit write path (#50).
+
 ## [1.2.0] - 2026-11-19
 
 ### Added

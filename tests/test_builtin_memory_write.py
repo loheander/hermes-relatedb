@@ -77,12 +77,12 @@ def test_targets_with_identical_text_do_not_collide(provider):
     assert _open(provider) == ["same"]
 
 
-def test_explicit_slot_targets_behave_as_before(provider):
-    provider.on_memory_write("add", "prefs/editor", "vim")
-    provider.on_memory_write("add", "prefs/editor", "neovim")
-    assert provider.store.active_slots() == ["prefs/editor"]
-    provider.on_memory_write("remove", "prefs/editor", "")
-    assert provider.store.active_slots() == []
+def test_builtin_targets_are_case_insensitive(provider):
+    provider.on_memory_write("add", " User ", "alpha")
+    provider.on_memory_write("add", "MEMORY", "beta")
+    assert _open(provider) == ["alpha", "beta"]
+    slots = provider.store.run("MATCH (f:Fact) RETURN f.slot AS slot ORDER BY slot")
+    assert [r["slot"].split("/")[1] for r in slots] == ["memory", "user"]
 
 
 class _CountingEmbedder(FakeEmbedder):
@@ -98,7 +98,47 @@ def _all_open(provider):
     return {(r["slot"], r["text"]) for r in rows}
 
 
-def test_mirror_off_skips_builtin_but_keeps_slots_and_existing(tmp_path, monkeypatch):
+def _counts(provider):
+    eps = provider.store.run("MATCH (e:Episode) RETURN count(e) AS n")[0]["n"]
+    facts = provider.store.run("MATCH (f:Fact) RETURN count(f) AS n")[0]["n"]
+    closed = provider.store.run("MATCH (f:Fact) WHERE f.closedAt IS NOT NULL RETURN count(f) AS n")[0]["n"]
+    return eps, facts, closed
+
+
+@pytest.mark.parametrize("target", ["prefs/editor", "memory/default", "", "users"])
+def test_unknown_target_is_ignored_with_warning(tmp_path, caplog, target):
+    _CountingEmbedder.calls = 0
+    p = RelateDBMemoryProvider()
+    p.initialize("s1", hermes_home=str(tmp_path), embedder=_CountingEmbedder(dim=4))
+    try:
+        # An explicit slot set through the tool stays untouched by the hook.
+        p.handle_tool_call("relatedb_remember", {"slot": "prefs/editor", "text": "vim"})
+        before = _counts(p)
+        calls = _CountingEmbedder.calls
+        caplog.clear()
+        with caplog.at_level("WARNING", logger="relatedb_memory.provider"):
+            for action, content in (
+                ("add", "neovim"),
+                ("replace", "helix"),
+                ("patch", "kakoune"),
+                ("remove", ""),
+            ):
+                p.on_memory_write(action, target, content, metadata={"previous_content": "vim"})
+        assert _counts(p) == before
+        assert _CountingEmbedder.calls == calls
+        assert ("prefs/editor", "vim") in _all_open(p)
+        warnings = [r for r in caplog.records if r.levelname == "WARNING" and "ignores target" in r.getMessage()]
+        assert len(warnings) == 4
+    finally:
+        p.shutdown()
+
+
+def test_target_is_required(provider):
+    with pytest.raises(TypeError):
+        provider.on_memory_write("add")  # type: ignore[call-arg]
+
+
+def test_mirror_off_skips_builtin_and_keeps_existing(tmp_path, monkeypatch):
     monkeypatch.setenv("RELATEDB_MIRROR_BUILTIN_MEMORY", "true")
     p = RelateDBMemoryProvider()
     p.initialize("s1", hermes_home=str(tmp_path), embedder=FakeEmbedder(dim=4))
@@ -119,8 +159,5 @@ def test_mirror_off_skips_builtin_but_keeps_slots_and_existing(tmp_path, monkeyp
         assert [t for t in _open(p)] == ["alpha"]
         eps = p.store.run("MATCH (e:Episode) WHERE e.kind = 'memory_write' RETURN count(e) AS n")
         assert eps[0]["n"] == 1  # only the earlier mirrored write
-
-        p.on_memory_write("add", "prefs/editor", "vim")
-        assert ("prefs/editor", "vim") in _all_open(p)
     finally:
         p.shutdown()

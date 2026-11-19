@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-19
+
 ### Added
 
 - Each fact now has an `origin` (`turn`, `pre_compress`, `memory_write`, `remember`). Recall always admits deliberate facts, caps captured facts at `captured_share` of `k` (default `0.5`) and labels hits with their origin (#39, ADR-0007).
 - `tools/backfill_origins.py` sets `origin` on existing stores from the episode kind. It is idempotent. Run it once per store: `uv run python tools/backfill_origins.py --db-path ~/.hermes/memory`. Facts without an origin are still ranked correctly, derived from their episode kind at recall time.
-
 - Near-duplicate open facts are linked with `DUPLICATE_OF` edges on write and by `hermes relatedb-memory dedupe [--dry-run]`. Recall returns one hit per cluster with `seen=N` distinct supporting episodes. New settings `dedupe` (default `true`) and `dedupe_threshold` (default `0.92`) (#40, ADR-0008).
 
 ### Changed

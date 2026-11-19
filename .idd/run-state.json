@@ -1,43 +1,30 @@
 {
   "version": 1,
-  "run_id": "20261119T132540Z-895570",
-  "started_at": "2026-11-19T13:25:44Z",
-  "updated_at": "2026-11-19T13:45:13Z",
+  "run_id": "20261119T142401Z-923518",
+  "started_at": "2026-11-19T14:24:17Z",
+  "updated_at": "2026-11-19T14:26:02Z",
   "invocation": "/auto-pilot",
   "mode": "balanced",
   "limit": 10,
-  "queue": [],
+  "queue": [
+    48
+  ],
   "phase": "merge",
   "lanes": [],
   "current": {
-    "branch": "test/41-replace-specs-memory-schema-md-with-an",
-    "issue": 41,
+    "branch": "feat/48-mirror-builtin-memory-setting",
+    "issue": 48,
     "outcome": "merged",
     "phase": "merge",
-    "pr": 47,
+    "pr": 49,
     "started_at": null,
-    "title": null
+    "title": "Add mirror_builtin_memory setting"
   },
   "processed": [
     {
-      "issue": 42,
+      "issue": 48,
       "outcome": "merged",
-      "pr": 44
-    },
-    {
-      "issue": 39,
-      "outcome": "merged",
-      "pr": 45
-    },
-    {
-      "issue": 40,
-      "outcome": "merged",
-      "pr": 46
-    },
-    {
-      "issue": 41,
-      "outcome": "merged",
-      "pr": 47
+      "pr": 49
     }
   ],
   "skip_list": [],

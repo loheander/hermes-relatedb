@@ -512,6 +512,8 @@ class RelateDBMemoryProvider(_Base):
         builtin = target.lower() in _BUILTIN_TARGETS
         if builtin:
             target = target.lower()
+            if not self._config.mirror_builtin_memory:
+                return
         now = _utc_now_iso()
         uid = uuid.uuid4().hex[:12]
         active_session = self._session_id or "default"

@@ -83,3 +83,44 @@ def test_explicit_slot_targets_behave_as_before(provider):
     assert provider.store.active_slots() == ["prefs/editor"]
     provider.on_memory_write("remove", "prefs/editor", "")
     assert provider.store.active_slots() == []
+
+
+class _CountingEmbedder(FakeEmbedder):
+    calls = 0
+
+    def embed_one(self, text):
+        type(self).calls += 1
+        return super().embed_one(text)
+
+
+def _all_open(provider):
+    rows = provider.store.run("MATCH (f:Fact) WHERE f.closedAt IS NULL RETURN f.slot AS slot, f.text AS text")
+    return {(r["slot"], r["text"]) for r in rows}
+
+
+def test_mirror_off_skips_builtin_but_keeps_slots_and_existing(tmp_path, monkeypatch):
+    monkeypatch.setenv("RELATEDB_MIRROR_BUILTIN_MEMORY", "true")
+    p = RelateDBMemoryProvider()
+    p.initialize("s1", hermes_home=str(tmp_path), embedder=FakeEmbedder(dim=4))
+    p.on_memory_write("add", "user", "alpha")
+    p.shutdown()
+
+    monkeypatch.setenv("RELATEDB_MIRROR_BUILTIN_MEMORY", "false")
+    _CountingEmbedder.calls = 0
+    p = RelateDBMemoryProvider()
+    p.initialize("s2", hermes_home=str(tmp_path), embedder=_CountingEmbedder(dim=4))
+    try:
+        p.on_memory_write("add", "user", "beta")
+        p.on_memory_write("add", "memory", "gamma")
+        p.on_memory_write("replace", "user", "alpha2", metadata={"previous_content": "alpha"})
+        p.on_memory_write("patch", "memory", "gamma2", metadata={"previous_content": "gamma"})
+        p.on_memory_write("remove", "user", "", metadata={"previous_content": "alpha"})
+        assert _CountingEmbedder.calls == 0
+        assert [t for t in _open(p)] == ["alpha"]
+        eps = p.store.run("MATCH (e:Episode) WHERE e.kind = 'memory_write' RETURN count(e) AS n")
+        assert eps[0]["n"] == 1  # only the earlier mirrored write
+
+        p.on_memory_write("add", "prefs/editor", "vim")
+        assert ("prefs/editor", "vim") in _all_open(p)
+    finally:
+        p.shutdown()

@@ -31,6 +31,7 @@ DEFAULT_AUTO_EXTRACT = True
 DEFAULT_CAPTURED_SHARE = 0.5
 DEFAULT_DEDUPE = True
 DEFAULT_DEDUPE_THRESHOLD = 0.92
+DEFAULT_MIRROR_BUILTIN_MEMORY = True
 
 CONFIG_FILENAME = "config.yaml"
 PROVIDER_NAME = "relatedb-memory"
@@ -46,6 +47,7 @@ ENV_VARS = {
     "captured_share": "RELATEDB_CAPTURED_SHARE",
     "dedupe": "RELATEDB_DEDUPE",
     "dedupe_threshold": "RELATEDB_DEDUPE_THRESHOLD",
+    "mirror_builtin_memory": "RELATEDB_MIRROR_BUILTIN_MEMORY",
 }
 
 _TRUE = {"1", "true", "yes", "on"}
@@ -65,6 +67,7 @@ class RelateDBConfig:
     captured_share: float = DEFAULT_CAPTURED_SHARE
     dedupe: bool = DEFAULT_DEDUPE
     dedupe_threshold: float = DEFAULT_DEDUPE_THRESHOLD
+    mirror_builtin_memory: bool = DEFAULT_MIRROR_BUILTIN_MEMORY
 
 
 def default_db_path(hermes_home: str | os.PathLike[str], snapshot_format: str) -> Path:
@@ -212,6 +215,7 @@ def resolve_config(
     share_raw = pick("captured_share")
     dedupe_raw = pick("dedupe")
     dedupe_thr_raw = pick("dedupe_threshold")
+    mirror_raw = pick("mirror_builtin_memory")
     return RelateDBConfig(
         hermes_home=home,
         db_path=db_path,
@@ -226,6 +230,11 @@ def resolve_config(
             if dedupe_thr_raw is None
             else _parse_share(dedupe_thr_raw, "dedupe_threshold")
         ),
+        mirror_builtin_memory=(
+            DEFAULT_MIRROR_BUILTIN_MEMORY
+            if mirror_raw is None
+            else _parse_bool(mirror_raw, "mirror_builtin_memory")
+        ),
     )
 
 
@@ -238,6 +247,7 @@ _VALIDATORS: dict[str, Callable[[Any, str], Any]] = {
     "captured_share": _parse_share,
     "dedupe": _parse_bool,
     "dedupe_threshold": lambda v, k: _parse_share(v, k),
+    "mirror_builtin_memory": _parse_bool,
 }
 
 

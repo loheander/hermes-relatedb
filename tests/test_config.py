@@ -373,3 +373,14 @@ def test_dedupe_schema_defaults_match_runtime(schema_module):
     fields = {f.key: f for f in schema_module.CONFIG_SCHEMA.fields}
     assert (fields["dedupe"].default == "true") is cfg.DEFAULT_DEDUPE
     assert float(fields["dedupe_threshold"].default) == cfg.DEFAULT_DEDUPE_THRESHOLD
+
+
+def test_mirror_builtin_memory_defaults_env_and_validation(tmp_path, schema_module):
+    c = resolve(tmp_path, {})
+    assert c.mirror_builtin_memory is cfg.DEFAULT_MIRROR_BUILTIN_MEMORY is True
+    c = resolve(tmp_path, {"RELATEDB_MIRROR_BUILTIN_MEMORY": "off"})
+    assert c.mirror_builtin_memory is False
+    with pytest.raises(ValueError, match="mirror_builtin_memory"):
+        resolve(tmp_path, {"RELATEDB_MIRROR_BUILTIN_MEMORY": "maybe"})
+    fields = {f.key: f for f in schema_module.CONFIG_SCHEMA.fields}
+    assert (fields["mirror_builtin_memory"].default == "true") is cfg.DEFAULT_MIRROR_BUILTIN_MEMORY

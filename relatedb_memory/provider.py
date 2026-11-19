@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
+import logging
 import re
 import shutil
 import threading
@@ -18,6 +20,11 @@ from typing import Any
 from . import config as _config
 from .embedder import Embedder, get_embedder
 from .store import RelateStore
+
+_LOG = logging.getLogger(__name__)
+
+# Hermes built-in memory targets; each file holds many entries (one slot per entry).
+_BUILTIN_TARGETS = frozenset({"user", "memory"})
 
 
 try:  # Hermes runtime is optional at import time.
@@ -209,6 +216,11 @@ _TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
 ]
+
+
+def _builtin_slot(target: str, entry_text: str) -> str:
+    digest = hashlib.sha256(entry_text.strip().encode("utf-8")).hexdigest()[:16]
+    return f"builtin/{target}/{digest}"
 
 
 def _utc_now_iso() -> str:
@@ -468,10 +480,30 @@ class RelateDBMemoryProvider(_Base):
             return
         store = self._ensure_store()
         embedder = self._embedder
-        slot = target or "memory/default"
+        target = (target or "memory/default").strip()
+        normalized_action = action.strip().lower()
+        if normalized_action not in {"add", "replace", "patch", "remove"}:
+            raise ValueError(f"Unsupported memory_write action: {action!r}")
+        meta = metadata or {}
+        builtin = target.lower() in _BUILTIN_TARGETS
+        if builtin:
+            target = target.lower()
         now = _utc_now_iso()
         uid = uuid.uuid4().hex[:12]
         active_session = self._session_id or "default"
+
+        # Built-in files hold many entries: one slot per entry. Other targets are
+        # explicit slots and keep one open fact per slot.
+        old_slot: str | None = None
+        if builtin:
+            slot = _builtin_slot(target, content)
+            if normalized_action == "remove":
+                old_slot = self._resolve_builtin_slot(store, target, content, meta, use_content=True)
+                slot = old_slot or slot
+            elif normalized_action in {"replace", "patch"}:
+                old_slot = self._resolve_builtin_slot(store, target, content, meta, use_content=False)
+        else:
+            slot = target
 
         store.record_episode(
             episode_id=f"ep-mw-{uid}",
@@ -480,22 +512,53 @@ class RelateDBMemoryProvider(_Base):
             at=now,
             text=f"{action} {slot}: {content}".strip(),
         )
-        normalized_action = action.strip().lower()
-        if normalized_action in {"add", "replace", "patch"}:
-            vec = embedder.embed_one(content) if embedder is not None else None
-            store.record_fact(
-                fact_id=f"f-mw-{uid}",
-                text=content,
-                slot=slot,
-                valid_from=now,
-                recorded_at=now,
-                episode_id=f"ep-mw-{uid}",
-                embedding=vec,
-            )
-        elif normalized_action == "remove":
+        if normalized_action == "remove":
+            if builtin and old_slot is None:
+                _LOG.warning(
+                    "relatedb: remove on %r matched no single open entry; nothing closed", target
+                )
+                return
             store.retract_slot(slot=slot, valid_to=now, closed_at=now)
-        else:
-            raise ValueError(f"Unsupported memory_write action: {action!r}")
+            return
+        vec = embedder.embed_one(content) if embedder is not None else None
+        store.record_fact(
+            fact_id=f"f-mw-{uid}",
+            text=content,
+            slot=slot,
+            valid_from=now,
+            recorded_at=now,
+            episode_id=f"ep-mw-{uid}",
+            embedding=vec,
+            supersedes_slot=old_slot,
+        )
+
+    @staticmethod
+    def _resolve_builtin_slot(
+        store: RelateStore,
+        target: str,
+        content: str,
+        meta: dict[str, Any],
+        *,
+        use_content: bool,
+    ) -> str | None:
+        """Find the open slot of the entry a replace/patch/remove refers to, or None."""
+        prefix = f"builtin/{target}/"
+        open_facts = store.open_facts_with_slot_prefix(prefix)
+        open_slots = {f["slot"] for f in open_facts}
+        previous = meta.get("previous_content")
+        candidates = [previous] if isinstance(previous, str) and previous.strip() else []
+        if not candidates and use_content and content.strip():
+            candidates.append(content)
+        for text in candidates:
+            slot = _builtin_slot(target, text)
+            if slot in open_slots:
+                return slot
+        old_text = meta.get("old_text")
+        if isinstance(old_text, str) and old_text:
+            matches = [f["slot"] for f in open_facts if old_text in (f["text"] or "")]
+            if len(matches) == 1:
+                return matches[0]
+        return None
 
     def on_pre_compress(self, messages: Sequence[dict[str, Any]]) -> None:
         self.flush_sync(timeout=2.0)

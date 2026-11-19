@@ -24,6 +24,27 @@ VECTOR_INDEX_TEMPLATE = (
 )
 
 
+#: Fact origin values (ADR-0007). Deliberate facts are always eligible in recall;
+#: captured facts are capped at a share of ``k``.
+DELIBERATE_ORIGINS: frozenset[str] = frozenset({"memory_write", "remember"})
+CAPTURED_ORIGINS: frozenset[str] = frozenset({"turn", "pre_compress"})
+FACT_ORIGINS: frozenset[str] = DELIBERATE_ORIGINS | CAPTURED_ORIGINS
+
+#: ``Episode.kind`` -> ``Fact.origin``. Used to default and to backfill origins.
+ORIGIN_BY_EPISODE_KIND: dict[str, str] = {
+    "message": "turn",
+    "delegation": "turn",
+    "pre_compress": "pre_compress",
+    "memory_write": "memory_write",
+    "tool_call": "remember",
+}
+
+
+def origin_for_episode_kind(kind: str | None) -> str:
+    """Return the fact origin implied by an episode kind (unknown kinds are deliberate)."""
+    return ORIGIN_BY_EPISODE_KIND.get(kind or "", "remember")
+
+
 class DimensionMismatchError(ValueError):
     """Raised when the configured embedding dimension differs from the store's vector index."""
 

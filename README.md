@@ -161,6 +161,7 @@ memory:
     embedding_model: BAAI/bge-small-en-v1.5
     prefetch_top_k: 8
     auto_extract: true
+    captured_share: 0.5
 ```
 
 | Key | Default | Meaning |
@@ -170,8 +171,9 @@ memory:
 | `embedding_model` | `BAAI/bge-small-en-v1.5` | Any `fastembed` model. Keep the same dimension for an existing store. |
 | `prefetch_top_k` | `8` | How many facts are added to context before each turn. |
 | `auto_extract` | `true` | Extract facts from conversation turns automatically. |
+| `captured_share` | `0.5` | Largest share of recalled facts that captured turns (`turn`, `pre_compress`) may fill. Remembered facts (`remember`, `memory_write`) are always eligible. `0` excludes captured facts, `1` removes the cap. |
 
-Each key can be overridden with an environment variable: `RELATEDB_SNAPSHOT_FORMAT`, `RELATEDB_DB_PATH`, `RELATEDB_EMBEDDING_MODEL`, `RELATEDB_PREFETCH_TOP_K`, `RELATEDB_AUTO_EXTRACT`. Environment variables take precedence over `config.yaml`. Each Hermes profile has its own store and settings.
+Each key can be overridden with an environment variable: `RELATEDB_SNAPSHOT_FORMAT`, `RELATEDB_DB_PATH`, `RELATEDB_EMBEDDING_MODEL`, `RELATEDB_PREFETCH_TOP_K`, `RELATEDB_AUTO_EXTRACT`, `RELATEDB_CAPTURED_SHARE`. Environment variables take precedence over `config.yaml`. Each Hermes profile has its own store and settings.
 
 ### Keeping memory in git
 

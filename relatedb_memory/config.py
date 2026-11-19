@@ -28,6 +28,7 @@ DEFAULT_SNAPSHOT_FORMAT = "parquet"
 DEFAULT_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_PREFETCH_TOP_K = 8
 DEFAULT_AUTO_EXTRACT = True
+DEFAULT_CAPTURED_SHARE = 0.5
 
 CONFIG_FILENAME = "config.yaml"
 PROVIDER_NAME = "relatedb-memory"
@@ -40,6 +41,7 @@ ENV_VARS = {
     "embedding_model": "RELATEDB_EMBEDDING_MODEL",
     "prefetch_top_k": "RELATEDB_PREFETCH_TOP_K",
     "auto_extract": "RELATEDB_AUTO_EXTRACT",
+    "captured_share": "RELATEDB_CAPTURED_SHARE",
 }
 
 _TRUE = {"1", "true", "yes", "on"}
@@ -56,6 +58,7 @@ class RelateDBConfig:
     embedding_model: str = DEFAULT_EMBEDDING_MODEL
     prefetch_top_k: int = DEFAULT_PREFETCH_TOP_K
     auto_extract: bool = DEFAULT_AUTO_EXTRACT
+    captured_share: float = DEFAULT_CAPTURED_SHARE
 
 
 def default_db_path(hermes_home: str | os.PathLike[str], snapshot_format: str) -> Path:
@@ -116,6 +119,18 @@ def _parse_top_k(value: Any, key: str = "prefetch_top_k") -> int:
         raise ValueError(f"{key} must be a positive integer, got {value!r}") from None
     if number < 1:
         raise ValueError(f"{key} must be a positive integer, got {value!r}")
+    return number
+
+
+def _parse_share(value: Any, key: str = "captured_share") -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{key} must be a number between 0 and 1, got {value!r}")
+    try:
+        number = float(str(value).strip()) if not isinstance(value, (int, float)) else float(value)
+    except ValueError:
+        raise ValueError(f"{key} must be a number between 0 and 1, got {value!r}") from None
+    if not 0 <= number <= 1:
+        raise ValueError(f"{key} must be a number between 0 and 1, got {value!r}")
     return number
 
 
@@ -188,6 +203,7 @@ def resolve_config(
     model_raw = pick("embedding_model")
     top_k_raw = pick("prefetch_top_k")
     auto_raw = pick("auto_extract")
+    share_raw = pick("captured_share")
     return RelateDBConfig(
         hermes_home=home,
         db_path=db_path,
@@ -195,6 +211,7 @@ def resolve_config(
         embedding_model=DEFAULT_EMBEDDING_MODEL if model_raw is None else _parse_text(model_raw, "embedding_model"),
         prefetch_top_k=DEFAULT_PREFETCH_TOP_K if top_k_raw is None else _parse_top_k(top_k_raw),
         auto_extract=DEFAULT_AUTO_EXTRACT if auto_raw is None else _parse_bool(auto_raw, "auto_extract"),
+        captured_share=DEFAULT_CAPTURED_SHARE if share_raw is None else _parse_share(share_raw),
     )
 
 
@@ -204,6 +221,7 @@ _VALIDATORS: dict[str, Callable[[Any, str], Any]] = {
     "embedding_model": _parse_text,
     "prefetch_top_k": lambda v, k: _parse_top_k(v, k),
     "auto_extract": _parse_bool,
+    "captured_share": _parse_share,
 }
 
 

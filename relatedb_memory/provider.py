@@ -19,6 +19,7 @@ from typing import Any
 
 from . import config as _config
 from .embedder import Embedder, get_embedder
+from .schema import CAPTURED_ORIGINS as _CAPTURED_ORIGINS
 from .store import RelateStore
 
 _LOG = logging.getLogger(__name__)
@@ -256,8 +257,12 @@ def _format_recall_block(hits: list[dict[str, Any]]) -> str:
         if hit.get("about"):
             meta.append(f"about={','.join(hit['about'])}")
         learned = hit.get("learnedFrom") or {}
-        if learned.get("kind"):
-            meta.append(f"from={learned['kind']}")
+        origin = hit.get("origin") or learned.get("kind")
+        if origin:
+            label = f"from={origin}"
+            if origin in _CAPTURED_ORIGINS:
+                label += " transcript, unconfirmed"
+            meta.append(label)
         if hit.get("replaced"):
             meta.append(f"replaces={'; '.join(hit['replaced'])}")
         if meta:
@@ -360,7 +365,7 @@ class RelateDBMemoryProvider(_Base):
         def _worker() -> None:
             try:
                 vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
-                hits = store.vector_recall(vec, k=top_k)
+                hits = store.vector_recall(vec, k=top_k, captured_share=self._config.captured_share)
             except Exception:
                 return
             with self._prefetch_lock:
@@ -398,7 +403,11 @@ class RelateDBMemoryProvider(_Base):
 
         if hits is None:
             vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
-            hits = store.vector_recall(vec, k=self._config.prefetch_top_k)
+            hits = store.vector_recall(
+                vec,
+                k=self._config.prefetch_top_k,
+                captured_share=self._config.captured_share,
+            )
 
         if not hits:
             self._last_recall_status = None
@@ -454,6 +463,7 @@ class RelateDBMemoryProvider(_Base):
                 recorded_at=now,
                 episode_id=f"ep-{uid}",
                 embedding=embedder.embed_one(combined),
+                origin="turn",
             )
 
         thread = _spawn_bg(_worker, name="relatedb-sync-turn")
@@ -530,6 +540,7 @@ class RelateDBMemoryProvider(_Base):
             episode_id=f"ep-mw-{uid}",
             embedding=vec,
             supersedes_slot=old_slot,
+            origin="memory_write",
         )
 
     @staticmethod
@@ -593,6 +604,7 @@ class RelateDBMemoryProvider(_Base):
             recorded_at=now,
             episode_id=f"ep-pc-{uid}",
             embedding=vec,
+            origin="pre_compress",
         )
 
     def on_session_switch(self, new_session_id: str, *, reset: bool = False) -> None:
@@ -675,6 +687,7 @@ class RelateDBMemoryProvider(_Base):
                 episode_id=ep_id,
                 about=about,
                 embedding=vec,
+                origin="remember",
             )
             return json.dumps({"status": "ok", "fact_id": fact_id, "slot": slot})
 
@@ -700,7 +713,11 @@ class RelateDBMemoryProvider(_Base):
             if embedder is None:
                 return json.dumps({"results": []})
             vec = getattr(embedder, "embed_query", embedder.embed_one)(query)
-            hits = store.vector_recall(vec, k=k)
+            hits = store.vector_recall(
+                vec,
+                k=k,
+                captured_share=self._config.captured_share if self._config else _config.DEFAULT_CAPTURED_SHARE,
+            )
             return json.dumps({"results": hits}, default=str)
 
         if tool_name == "relatedb_as_of":
@@ -837,6 +854,14 @@ class RelateDBMemoryProvider(_Base):
                 "description": "Extract facts from turns in the background",
                 "default": _config.DEFAULT_AUTO_EXTRACT,
                 "type": "boolean",
+            },
+            {
+                "key": "captured_share",
+                "description": "Largest share of recalled facts that captured turns may fill (0 to 1)",
+                "default": _config.DEFAULT_CAPTURED_SHARE,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
             },
         ]
 

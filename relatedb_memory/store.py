@@ -15,7 +15,18 @@ from typing import Any
 
 from .config import RelateDBConfig
 from .embedder import format_vector
-from .schema import ensure_schema, validate_embedding_dim
+from .schema import (
+    CAPTURED_ORIGINS,
+    FACT_ORIGINS,
+    ensure_schema,
+    origin_for_episode_kind,
+    validate_embedding_dim,
+)
+
+#: Default share of ``k`` that captured facts may fill in recall (ADR-0007).
+DEFAULT_CAPTURED_SHARE = 0.5
+RECALL_POOL_FACTOR = 10
+RECALL_POOL_MIN = 64
 
 EPISODE_KINDS: frozenset[str] = frozenset(
     {"message", "tool_call", "memory_write", "delegation", "pre_compress"}
@@ -265,12 +276,18 @@ class RelateStore:
         about: Sequence[str] = (),
         embedding: Sequence[float] | None = None,
         supersedes_slot: str | None = None,
+        origin: str | None = None,
     ) -> None:
         """Idempotently upsert a ``:Fact``, link provenance, and supersede prior open slot facts.
 
         ``supersedes_slot`` additionally closes the open facts of a *different* slot
         and links them with ``SUPERSEDES`` (cross-slot supersession).
+
+        ``origin`` records how the fact was captured (see ``schema.FACT_ORIGINS``).
+        When omitted it is derived from the kind of the ``episode_id`` episode.
         """
+        if origin is not None and origin not in FACT_ORIGINS:
+            raise ValueError(f"Unsupported fact origin {origin!r}; expected one of {sorted(FACT_ORIGINS)}")
         vec = (
             format_vector(embedding, expected_dim=self._embedding_dim)
             if embedding is not None
@@ -311,6 +328,19 @@ class RelateStore:
                 "MATCH (f:Fact {id: $fact_id}), (ep:Episode {id: $episode_id}) "
                 "MERGE (f)-[:FROM]->(ep)",
                 {"fact_id": fact_id, "episode_id": episode_id},
+            )
+            fact_origin = origin
+            if fact_origin is None:
+                kinds = list(
+                    conn.execute(
+                        "MATCH (ep:Episode {id: $episode_id}) RETURN ep.kind AS kind",
+                        {"episode_id": episode_id},
+                    )
+                )
+                fact_origin = origin_for_episode_kind(kinds[0]["kind"] if kinds else None)
+            conn.execute(
+                "MATCH (f:Fact {id: $fact_id}) WHERE f.origin IS NULL SET f.origin = $origin",
+                {"fact_id": fact_id, "origin": fact_origin},
             )
             for key in about_keys:
                 conn.execute(
@@ -382,41 +412,69 @@ class RelateStore:
         query_vector: Sequence[float],
         *,
         k: int = 8,
+        captured_share: float = DEFAULT_CAPTURED_SHARE,
     ) -> list[dict[str, Any]]:
-        """Run pre-filtered vector recall over open facts (``closedAt IS NULL``)."""
+        """Run pre-filtered vector recall over open facts (``closedAt IS NULL``).
+
+        Deliberate facts (``memory_write``, ``remember``) are always eligible.
+        Captured facts (``turn``, ``pre_compress``) fill at most
+        ``max(1, floor(k * captured_share))`` of the ``k`` results, or none when
+        ``captured_share`` is 0 (ADR-0007). Each hit carries its ``origin``.
+        """
         if isinstance(k, bool) or not isinstance(k, int) or k < 1:
             raise ValueError(f"k must be a positive integer, got {k!r}")
+        if (
+            isinstance(captured_share, bool)
+            or not isinstance(captured_share, (int, float))
+            or not 0 <= captured_share <= 1
+        ):
+            raise ValueError(f"captured_share must be between 0 and 1, got {captured_share!r}")
         vec = format_vector(query_vector, expected_dim=self._embedding_dim)
+        # Over-fetch so deliberate facts are not crowded out of the candidate pool.
+        pool = k if captured_share >= 1 else max(k * RECALL_POOL_FACTOR, RECALL_POOL_MIN)
         rows = self.run(
             "MATCH (f:Fact) "
             "SEARCH f IN (VECTOR INDEX fact_embedding FOR vector($q, $dim, FLOAT32) "
-            "WHERE f.closedAt IS NULL LIMIT $k) SCORE AS score "
+            "WHERE f.closedAt IS NULL LIMIT $pool) SCORE AS score "
             "MATCH (f)-[:FROM]->(ep:Episode) "
-            "RETURN f.id AS id, f.text AS text, f.slot AS slot, round(score, 4) AS score, "
+            "RETURN f.id AS id, f.text AS text, f.slot AS slot, f.origin AS origin, "
+            "round(score, 4) AS score, "
             "COLLECT { MATCH (f)-[:ABOUT]->(e:Entity) RETURN e.key ORDER BY e.key } AS about, "
             "ep.id AS ep_id, ep.kind AS ep_kind, ep.text AS ep_text, "
             "COLLECT { MATCH (f)-[:SUPERSEDES]->(old:Fact) RETURN old.text } AS replaced "
             "ORDER BY score DESC",
             q=vec,
             dim=self._embedding_dim,
-            k=k,
+            pool=pool,
         )
-        return [
-            {
-                "id": row["id"],
-                "text": row["text"],
-                "slot": row["slot"],
-                "score": row["score"],
-                "about": row["about"],
-                "learnedFrom": {
-                    "id": row["ep_id"],
-                    "kind": row["ep_kind"],
-                    "text": row["ep_text"],
-                },
-                "replaced": row["replaced"],
-            }
-            for row in rows
-        ]
+        captured_cap = 0 if captured_share <= 0 else max(1, int(k * captured_share))
+        hits: list[dict[str, Any]] = []
+        captured = 0
+        for row in rows:
+            origin = row["origin"] or origin_for_episode_kind(row["ep_kind"])
+            if origin in CAPTURED_ORIGINS:
+                if captured >= captured_cap:
+                    continue
+                captured += 1
+            hits.append(
+                {
+                    "id": row["id"],
+                    "text": row["text"],
+                    "slot": row["slot"],
+                    "origin": origin,
+                    "score": row["score"],
+                    "about": row["about"],
+                    "learnedFrom": {
+                        "id": row["ep_id"],
+                        "kind": row["ep_kind"],
+                        "text": row["ep_text"],
+                    },
+                    "replaced": row["replaced"],
+                }
+            )
+            if len(hits) >= k:
+                break
+        return hits
 
     def close(self, timeout: float | None = None) -> None:
         """Flush pending operations and close the connection on its owning thread."""

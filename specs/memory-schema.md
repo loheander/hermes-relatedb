@@ -11,6 +11,9 @@ ADR-0001.
 `Fact {id, text, valid_from, valid_to, recorded_at, embedding}`. The
 definitions are implemented in `relatedb_memory.schema`.
 
+`Fact.origin` is one of `turn`, `pre_compress`, `memory_write` or `remember`
+and says how the fact was captured. Recall ranks by it as decided in ADR-0007.
+
 ## Relationships
 
 `(:Episode)-[:ASSERTS]->(:Fact)` and `(:Fact)-[:ABOUT]->(:Entity)`. A

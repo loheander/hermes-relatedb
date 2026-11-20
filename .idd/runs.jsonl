@@ -21,3 +21,5 @@
 {"ts":"2026-11-19T14:10:00Z","issue":41,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"outcome":"merged","pr":47,"verification":"full"}
 {"ts":"2026-11-19T14:11:00Z","issue":33,"mode":"balanced","skill":"auto-pilot","outcome":"skipped","pr":null,"skipped_reason":"blocked_label"}
 {"ts":"2026-11-19T14:26:02Z","issue":48,"mode":"balanced","skill":"auto-pilot","complexity":"low","outcome":"merged","pr":49,"verification":"full"}
+{"ts":"2026-11-19T15:12:36Z","issue":50,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"full","qa_cycles":1,"ceiling":2,"outcome":"left_open","pr":52,"verification":"partial","duration_s":391,"phases":{"preflight":34,"research":60,"plan":157,"implement":73,"qa":34,"deliver":33},"agents":2,"model":"claude-opus-5-5"}
+{"ts":"2026-11-19T16:26:59Z","issue":51,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"ceiling":1,"outcome":"merged","pr":53,"verification":"full","duration_s":156,"phases":{"preflight":51,"research":11,"plan":6,"implement":25,"qa":36,"deliver":27},"agents":2,"model":"claude-opus-5-5"}

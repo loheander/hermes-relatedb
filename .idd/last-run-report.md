@@ -1,11 +1,17 @@
-<!-- idd:run-report v1 {"generated_at": "2026-11-19T13:45:35Z", "run_id": "20261119T132540Z-895570"} -->
+<!-- idd:run-report v1 {"generated_at": "2026-11-19T16:27:19Z", "run_id": "20261119T161917Z-966939"} -->
 
-◆ Auto-Pilot Summary — 4/10 iterations
-  Result:    COMPLETED — complete: 4 merged (#42 → PR #44, #39 → PR #45, #40 → PR #46, #41 → PR #47), #33 skipped (blocked label)
-  merged: 4 · left_open: 0 · partial_followup: 0 · blocked_by_dependency: 0 · failed: 0 · skipped: 1
-  Mode:      balanced
-  Evidence:  each PR squash-merged with --match-head-commit bound to the reviewed head; CI passed on every PR; issues #42, #39, #40, #41 confirmed CLOSED; post-merge cleanup ok
-  Uncertainty: triage cache reused although the triage commit itself postdated it (kept the manual order override); PR #45's first review returned merge_floor unmet and was re-run before merge; PR #47 needed one review fix; lock was released just before this report was persisted
-  Decision:  No approval needed.
-  Remaining: 1 open issue (#33, blocked)
-  Next action: Unblock or clarify #33, then re-run /auto-pilot
+# Auto-Pilot run 20261119T161917Z-966939
+
+Result: COMPLETE — complete — #51 merged via PR #53; no other eligible issues (#33 is labelled `blocked`).
+
+| # | Issue | PR | Outcome | Verification |
+|---|-------|----|---------|--------------|
+| 1 | #51 Steer the model to relatedb_remember for facts with a natural slot key | #53 | merged | full — AC 4/0/0 |
+
+Evidence: review PASS in 1 cycle with 0 findings; 154/154 tests pass; CI `test` green at 0482f02; merge identity fresh (base main not ahead); squash-merged as 0e09160; #51 closed.
+
+Uncertainty: the triage cache was stale and was not rebuilt, because the live open list had 2 issues and one of them is blocked. The resolver's progress-record writes were refused (exit 3), which affects resume hints only.
+
+Decision: No approval needed.
+
+Next action: #33 needs a human decision before its `blocked` label is removed.

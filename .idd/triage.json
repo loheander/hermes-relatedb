@@ -1,102 +1,63 @@
 {
   "version": 1,
-  "updated": "2026-11-19T13:21:50Z",
-  "source": "/issue-triage",
-  "analyzed_count": 5,
+  "updated": "2026-11-19T15:02:02Z",
+  "source": "/auto-pilot",
+  "analyzed_count": 3,
   "issues": [
     {
-      "number": 39,
-      "title": "Rank deliberate memories above captured turns in recall",
-      "type": "feature",
-      "priority": "P2",
+      "number": 50,
+      "title": "Restrict on_memory_write to built-in targets and correct the #48 docs",
+      "type": null,
+      "priority": "P3",
       "blocks": [
-        40
+        33,
+        51
       ],
       "blocked_by": [],
       "status": "ready",
-      "stale_days": null,
-      "labels": [
-        "enhancement",
-        "story"
-      ],
-      "affected_files": [
-        "relatedb_memory/provider.py",
-        "relatedb_memory/store.py",
-        "tools/migrate_embeddings.py"
-      ],
-      "updated_at": "2026-11-19T12:50:30Z",
-      "potentially_fixed_by": null
-    },
-    {
-      "number": 41,
-      "title": "Replace specs/memory-schema.md with an executable e2e schema contract",
-      "type": null,
-      "priority": "P3",
-      "blocks": [],
-      "blocked_by": [
-        39,
-        40,
-        42
-      ],
-      "status": "blocked",
       "stale_days": null,
       "labels": [
         "documentation",
-        "story"
+        "enhancement"
       ],
       "affected_files": [
-        "tests/e2e/features/memory_schema.feature",
-        "relatedb_memory/schema.py",
-        "relatedb_memory/store.py",
-        "specs/memory-schema.md"
+        "relatedb_memory/provider.py",
+        "CHANGELOG.md",
+        "README.md",
+        "CONFIGURATION.md",
+        "config_schema.py",
+        "tests/test_builtin_memory_write.py",
+        "tests/e2e/features/session_hooks.feature",
+        "tests/e2e/test_e2e_session_hooks.py"
       ],
-      "updated_at": "2026-11-19T12:50:33Z",
+      "updated_at": "2026-11-19T14:54:13Z",
       "potentially_fixed_by": null
     },
     {
-      "number": 40,
-      "title": "Flag near-duplicate facts with embeddings and collapse them in recall",
+      "number": 51,
+      "title": "Steer the model to relatedb_remember for facts with a natural slot key",
       "type": "feature",
       "priority": "P2",
       "blocks": [
-        41
+        33
       ],
       "blocked_by": [
-        39
+        50
       ],
       "status": "blocked",
       "stale_days": null,
       "labels": [
-        "enhancement",
-        "story"
+        "enhancement"
       ],
       "affected_files": [
         "relatedb_memory/provider.py",
-        "relatedb_memory/store.py",
-        "relatedb_memory/config.py"
+        "CHANGELOG.md",
+        "tests/e2e/test_e2e_agent_tools.py",
+        "tests/e2e/features/agent_tools.feature",
+        "skills/relatedb-memory/SKILL.md",
+        "README.md"
       ],
-      "updated_at": "2026-11-19T12:50:39Z",
-      "potentially_fixed_by": null
-    },
-    {
-      "number": 42,
-      "title": "on_memory_write collapses all USER.md/MEMORY.md entries into one slot",
-      "type": "bug",
-      "priority": "P2",
-      "blocks": [
-        41
-      ],
-      "blocked_by": [],
-      "status": "ready",
-      "stale_days": null,
-      "labels": [
-        "bug"
-      ],
-      "affected_files": [
-        "relatedb_memory/provider.py",
-        "relatedb_memory/store.py"
-      ],
-      "updated_at": "2026-11-19T13:05:28Z",
+      "updated_at": "2026-11-19T14:54:14Z",
       "potentially_fixed_by": null
     },
     {
@@ -105,37 +66,38 @@
       "type": "feature",
       "priority": "P3",
       "blocks": [],
-      "blocked_by": [],
+      "blocked_by": [
+        50,
+        51
+      ],
       "status": "unclear",
       "stale_days": null,
       "labels": [
         "enhancement",
         "question",
-        "blocked",
         "blocked"
       ],
       "affected_files": [
-        "relatedb_memory/provider.py"
+        "relatedb_memory/provider.py",
+        "relatedb_memory/store.py",
+        "relatedb_memory/dedupe.py",
+        "relatedb_memory/config.py",
+        "config_schema.py",
+        "CONFIGURATION.md",
+        "README.md"
       ],
       "updated_at": "2026-11-19T13:21:30Z",
       "potentially_fixed_by": null
     }
   ],
   "summary": {
-    "parallel_groups": [
-      [
-        42,
-        39
-      ]
-    ],
+    "parallel_groups": [],
     "stale_count": 0,
     "stale_threshold_days": 7,
     "potentially_fixed_count": 0,
     "suggested_order": [
-      42,
-      39,
-      40,
-      41,
+      50,
+      51,
       33
     ],
     "circular_deps": [],
@@ -143,14 +105,9 @@
   },
   "history": [
     {
-      "time": "2026-11-19T13:21:50Z",
-      "source": "/issue-triage",
-      "changes": "Full re-triage (5 issues)"
-    },
-    {
-      "time": "2026-11-19T13:21:50Z",
-      "source": "/issue-triage",
-      "changes": "Manual order override: #42 independent; #41 after #39/#40/#42"
+      "time": "2026-11-19T15:02:02Z",
+      "source": "/auto-pilot",
+      "changes": "Full re-triage (3 issues)"
     }
   ]
 }

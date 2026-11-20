@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-20
+
 ### Changed
 
 - The `relatedb_remember` tool description now tells the model to prefer it over the built-in `memory` tool for facts with a stable, natural key that a later value replaces (a preference, an owner, a current status, a version), and to reuse the slot on update. The `slot` parameter description gives the naming convention: short, lowercase, `/`-separated, general to specific, stable across sessions (for example `prefs/editor`, `project/<slug>/owner`). Only schema text changed (#51).

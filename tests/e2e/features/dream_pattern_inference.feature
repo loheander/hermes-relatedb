@@ -68,6 +68,13 @@ Feature: Pattern inference across conversations (Dream Mode, Phase 2b)
     When the user states "Show me the code first, the plan afterwards" and Dream Mode retires the pattern because of it
     Then recall no longer shows the pattern
     And the pattern is closed, not deleted, with its supporting links kept
+    And the statement is still recalled
+
+  @pending_60
+  Scenario: Something that is not an explicit user statement cannot retire a pattern
+    Given a pattern "Tends to want the migration plan before code" supported by 3 episodes
+    When Dream Mode is told that an observation contradicts the pattern
+    Then the pattern is still open
 
   @pending_60
   Scenario: Losing supporting evidence closes the pattern
@@ -79,8 +86,7 @@ Feature: Pattern inference across conversations (Dream Mode, Phase 2b)
   @pending_60
   Scenario: Pattern inference off leaves typed observations on and makes no pattern call
     Given pattern inference is turned off
-    And the observation "Asks for the migration plan before any code" in episode "ep-1"
     When a Dream Mode run is attempted
     Then no pattern task is registered
     And the language model made no pattern call
-    And the observation "Asks for the migration plan before any code" is still recorded
+    And the observation "Asks for the migration plan before any code" is recorded by the run

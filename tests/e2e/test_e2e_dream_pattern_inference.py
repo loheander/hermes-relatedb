@@ -38,6 +38,7 @@ EMBEDDING_DIM = 4
 OBS_TASK = "relatedb-dream"
 PATTERN_TASK = "relatedb-dream-patterns"
 PATTERN_TOPIC = "answer-order"
+OBSERVED_TEXT = "Asks for the migration plan before any code"
 INSTRUCTION_WORDS = re.compile(r"\b(always|never|must|should|ensure|remember to|do not|don't)\b", re.IGNORECASE)
 
 
@@ -200,6 +201,19 @@ def when_contradicted(world, text):
     dream.register(world.ctx, provider)
     world.ctx.fire_idle_task(PATTERN_TASK)
     world.answer = provider.prefetch(world.pattern_text)
+    world.statement = text
+
+
+@when(parsers.parse("Dream Mode is told that an observation contradicts the pattern"))
+def when_observation_given_as_statement(world):
+    from relatedb_memory import dream
+
+    provider = _provider(world)
+    world.ctx.llm.script(
+        {"patterns": [], "retire": [{"pattern": _pattern(world)["id"], "statement": world.observations[0].id}]}
+    )
+    dream.register(world.ctx, provider)
+    world.ctx.fire_idle_task(PATTERN_TASK)
 
 
 @when(parsers.parse("{count:d} of its supporting observations are superseded"))
@@ -226,7 +240,13 @@ def when_runs_again(world):
 def when_attempted(world):
     from relatedb_memory import dream
 
-    world.ctx.llm.script({"observations": []})
+    provider = _provider(world)
+    provider.store.record_episode(
+        episode_id="ep-1", session="s-ep-1", kind="message", at=_day(1), text="session transcript", mentions=[]
+    )
+    world.ctx.llm.script({"observations": [
+        {"scope": None, "kind": "observation", "topic": "answer-order", "text": OBSERVED_TEXT}
+    ]})
     dream.register(world.ctx, _provider(world))
     if OBS_TASK in world.ctx.idle_tasks:
         world.ctx.fire_idle_task(OBS_TASK)
@@ -271,7 +291,7 @@ def line_not_instruction(world):
 def pattern_derived_from(world, observations, episodes):
     rows = _cypher(
         world,
-        "MATCH (p:Fact {kind: 'pattern'})-[:DERIVED_FROM]->(s) RETURN labels(s)[0] AS label, s.id AS id",
+        "MATCH (p:Fact {kind: 'pattern'})-[:DERIVED_FROM]->(s) WHERE p.closedAt IS NULL RETURN labels(s)[0] AS label, s.id AS id",
     )
     facts = {r["id"] for r in rows if r["label"] == "Fact"}
     eps = {r["id"] for r in rows if r["label"] == "Episode"}
@@ -304,7 +324,7 @@ def pattern_support(world, count):
 def still_inference(world):
     pattern = _pattern(world)
     assert pattern["type"] == "pattern" and pattern["status"] == "open"
-    rows = _cypher(world, "MATCH (f:Fact {kind: 'pattern'}) RETURN f.id AS id")
+    rows = _cypher(world, "MATCH (f:Fact {kind: 'pattern'}) WHERE f.closedAt IS NULL RETURN f.id AS id")
     assert len(rows) == 1
 
 
@@ -343,6 +363,7 @@ def pattern_closed(world):
 @then("no pattern task is registered")
 def no_pattern_task(world):
     assert PATTERN_TASK not in world.ctx.idle_tasks
+    assert OBS_TASK in world.ctx.idle_tasks
 
 
 @then("the language model made no pattern call")
@@ -350,7 +371,17 @@ def no_pattern_call(world):
     assert [c for c in world.ctx.llm.calls if c.task == PATTERN_TASK or "pattern" in (c.purpose or "")] == []
 
 
-@then(parsers.parse('the observation "{text}" is still recorded'))
+@then(parsers.parse('the observation "{text}" is recorded by the run'))
 def observation_recorded(world, text):
-    rows = _cypher(world, "MATCH (f:Fact) WHERE f.slot STARTS WITH 'observation/' RETURN f.text AS text")
-    assert text in {r["text"] for r in rows}
+    rows = _cypher(world, "MATCH (f:Fact) WHERE f.text CONTAINS $text RETURN f.text AS text", text=text)
+    assert rows, "typed observation extraction did not run with pattern inference off"
+
+
+@then("the statement is still recalled")
+def statement_recalled(world):
+    assert world.statement in _provider(world).prefetch(world.statement)
+
+
+@then("the pattern is still open")
+def pattern_open(world):
+    assert _pattern(world)["status"] == "open"

@@ -17,13 +17,15 @@ ADR-0011, ADR-0012 and ADR-0013 are Proposed and not yet agreed; this ADR refers
 
 **Sources.** Each pattern has `DERIVED_FROM` edges to its supporting observation facts and to the episodes those observations cite.
 
-**Support.** Support is computed by the code, never taken from the model: the number of distinct source episodes of the open (not superseded) observations the model cites. Several observations from one episode count once, and a summary observation cites the episode it summarises, so it adds nothing. A pattern is proposed only when support reaches `dream_pattern_min_episodes` (`RELATEDB_DREAM_PATTERN_MIN_EPISODES`, default 3). A later pass that finds more episodes raises `support` on the same pattern.
+**Support.** Support is computed by the code, never taken from the model: the number of distinct source episodes of the open (not superseded) observations the model cites. Several observations from one episode count once, and a summary observation cites the episode it summarises, so it adds nothing. A pattern is proposed only when support reaches `dream_pattern_min_episodes` (`RELATEDB_DREAM_PATTERN_MIN_EPISODES`, default 3). A later pass that finds more episodes raises `support` on the open pattern in place, without a version row; the scenarios only look at open rows.
 
 **Uncertainty.** Uncertainty is the source count shown with an explicit label, not a score the model invents. Recall renders `Inference (not confirmed, N sources): <text>`. The label sits in front of the text and uses no imperative wording.
 
 **Pass.** `dream.register(ctx, provider)` registers a second idle task, `relatedb-dream-patterns`, only when pattern inference is on. It calls `ctx.llm.complete_structured` once and receives `{"patterns": [{"topic", "text", "evidence": [observation ids]}], "retire": [{"pattern", "statement"}]}`.
 
-**Read seam.** `provider.dream_patterns(include_closed=False)` lists `{"id", "topic", "text", "type": "pattern", "status", "support", "sources"}`.
+**Read seam.** `provider.dream_proposals()` is the `USER.md` proposal list proposed in ADR-0013 (in review, not on main); a pattern never appears in it.
+
+**Pattern list.** `provider.dream_patterns(include_closed=False)` lists `{"id", "topic", "text", "type": "pattern", "status", "support", "sources"}`.
 
 **Never an instruction.** A pattern is not mirrored to `USER.md`, creates no `dream_proposals()` entry, and is excluded from `system_prompt_block()`. It reaches the model only through `prefetch`, as a labelled inference.
 

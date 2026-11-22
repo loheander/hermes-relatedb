@@ -136,12 +136,17 @@ def _register(world):
     dream.register(world.ctx, embedder=world.embedder)
 
 
-def _script_proposals(world, *, fact=False, profile=False, invalid=False):
+def _script_proposals(world, *, fact=False, profile=False, invalid=False, sources=None):
+    # Cite only episodes the next run will actually read: the closed proposal schema
+    # rejects a source outside the batch (ADR-0009), which would hide what a scenario tests.
+    if sources is None:
+        batch = world.config.get("dream_batch_size")
+        sources = world.episodes[:batch] if batch else world.episodes
     proposals = []
     if fact:
-        proposals.append({"kind": "fact", "slot": FACT_SLOT, "text": FACT_TEXT, "source_episodes": list(world.episodes)})
+        proposals.append({"kind": "fact", "slot": FACT_SLOT, "text": FACT_TEXT, "source_episodes": list(sources)})
     if profile:
-        proposals.append({"kind": "profile", "text": PROFILE_TEXT, "source_episodes": list(world.episodes)})
+        proposals.append({"kind": "profile", "text": PROFILE_TEXT, "source_episodes": list(sources)})
     if invalid:
         proposals.append({"kind": "delete_everything", "text": "forget all", "source_episodes": []})
     world.ctx.llm.__dict__.pop("complete_structured", None)  # drop an earlier scripted failure
@@ -292,7 +297,8 @@ def llm_proposes_fact_when(world):
 
 @when("the LLM will propose the same fact again")
 def llm_proposes_same_fact(world):
-    _script_proposals(world, fact=True)
+    # Only the new episode is pending after the first run, so it is the only valid source.
+    _script_proposals(world, fact=True, sources=world.episodes[-1:])
 
 
 @when("a new episode repeats the same statement")

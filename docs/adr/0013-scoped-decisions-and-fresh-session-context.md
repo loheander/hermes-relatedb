@@ -15,13 +15,15 @@ The scenarios in `tests/e2e/features/dream_scoped_context.feature` (tagged `@pen
 
 **Scope representation.** A scope is a short string such as `project-a`. Decisions are facts in the slot `dream/<scope>/<topic>`, so the existing bitemporal supersession (ADR-0001) gives "latest wins within a scope" and keeps the earlier decision readable through `relatedb_as_of`. Durable personal preferences have no scope and are never stored under `dream/`.
 
-**Scope detection.** The session declares its scope through metadata: `provider.initialize(..., project="<scope>")`. During a Dream Mode pass the model proposes a scope per observation (`null` for a personal preference); a model-proposed scope that is not a known scope is kept only if the session metadata of the source episode names it.
+**Scope detection.** The session declares its scope through metadata: `provider.initialize(..., project="<scope>")`. During a Dream Mode pass the model proposes a scope per observation (`null` for a personal preference), and the proposal is trusted in this phase: the model's scope is used as given. Validating it against session metadata is an open question.
+
+**Bitemporal stamps.** Dream Mode derives `valid_from` and `recorded_at` of a decision from the source episode that the observation cites (here the newest episode not yet consolidated), never from the wall clock. A later decision in the same slot therefore closes the earlier one at its own `valid_from`, and `relatedb_as_of` answers "what held on 3 March". Re-reading an already consolidated episode produces no new fact.
 
 **Scope selection at recall.** `prefetch` for a session with a scope returns facts in that scope plus unscoped facts, and no facts from another scope. Dream Mode off leaves recall unchanged.
 
 **Pass.** `dream.register(ctx, provider)` registers one idle task, `relatedb-dream`, which reads recent episodes, calls `ctx.llm.complete_structured` once and receives `{"observations": [{"scope", "kind", "topic", "text"}]}` with `kind` one of `decision` or `preference`. Decisions are written as scoped facts. Preferences become proposals.
 
-**USER.md proposals.** `provider.dream_proposals()` lists `{"id", "target": "USER.md", "text", "status"}`; `provider.approve_dream_proposal(id)` is the only path that writes `USER.md`, so an unapproved proposal leaves the file unchanged. A project decision is never turned into a proposal.
+**USER.md proposals.** `provider.dream_proposals()` lists `{"id", "target": "USER.md", "text", "status"}`; `provider.approve_dream_proposal(id)` is the only path that writes `USER.md`, so an unapproved proposal leaves the file unchanged. On approval the text is also mirrored as an unscoped fact through the `on_memory_write` path (#42), which is how an approved preference reaches `prefetch` in every scope; `prefetch` itself does not read `USER.md`. A project decision is never turned into a proposal.
 
 **Context size budget.** The maintained context per scope (`provider.dream_context()`) is capped at `dream_context_chars` (`RELATEDB_DREAM_CONTEXT_CHARS`, default 2000). Over budget, the oldest and least recently recalled entries are dropped from the context; the facts themselves stay in the store.
 
@@ -33,6 +35,7 @@ The scenarios in `tests/e2e/features/dream_scoped_context.feature` (tagged `@pen
 - Can the user correct a scope after the fact (move a decision to another project), and through which surface (CLI, tool, or editing the proposal)?
 - Is `project=` metadata available from Hermes at `initialize`, or must scope be inferred from the working directory?
 - Should the default budget count characters or tokens?
+- Should the model's scope be validated against session metadata, and what counts as a known scope?
 - Are `USER.md` proposals deduplicated against facts already in `USER.md`, and by what comparison?
 
 ## Consequences

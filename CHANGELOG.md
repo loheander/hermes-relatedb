@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Failing e2e scenarios (`@pending_55`, strict xfail) in `tests/e2e/features/dream_run_lifecycle.feature` and Proposed ADR-0009 for the Dream Mode run lifecycle, checkpoint and `DreamRun` record. Tests and docs only; no behavior change (#55).
 - Shared Dream Mode e2e harness in `tests/e2e/dream_support.py`: a fake Hermes plugin context (scripted `ctx.llm.complete_structured`, idle-task and auxiliary-task registries, injectable clock) checked against Hermes v0.23.2, plus a generic `@pending_<n>` strict-xfail rule in `tests/e2e/conftest.py`. Test-only; no plugin behavior changes (#54).
 
 ## [1.3.0] - 2026-11-20

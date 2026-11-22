@@ -122,3 +122,36 @@ def test_pending_marker_failing_test_is_xfail_with_reason(tmp_path):
     """)
     assert code == 0
     assert "XFAIL" in out and "Pending #999" in out
+
+
+def test_llm_parses_scripted_raw_text_when_json_is_requested(fake_ctx):
+    fake_ctx.llm.script(text='{"facts": []}').script(text="not json").script(text='{"facts": []}')
+    parsed = fake_ctx.llm.complete_structured(instructions="a", input=["x"], json_mode=True)
+    assert parsed.parsed == {"facts": []} and parsed.content_type == "json"
+    plain = fake_ctx.llm.complete_structured(instructions="a", input=["x"], json_mode=True)
+    assert plain.parsed is None and plain.content_type == "text"
+    unrequested = fake_ctx.llm.complete_structured(instructions="a", input=["x"])
+    assert unrequested.parsed is None and unrequested.content_type == "text"
+
+
+def test_llm_does_not_mutate_a_reused_usage_object(fake_ctx):
+    usage = PluginLlmUsage(input_tokens=7, output_tokens=3)
+    fake_ctx.llm.script({}, usage=usage).script({}, usage=usage)
+    for _ in range(2):
+        fake_ctx.llm.complete_structured(instructions="a", input=["x"], json_mode=True)
+    assert usage.total_tokens == 0
+    assert fake_ctx.llm.usage.total_tokens == 20
+
+
+def test_idle_task_that_raises_still_counts_as_a_run(fake_ctx):
+    seen = []
+
+    def boom(run):
+        seen.append(run.run_count)
+        raise RuntimeError("boom")
+
+    fake_ctx.register_idle_task("dream", boom, interval_hours=1, min_idle_hours=1)
+    for _ in range(2):
+        with pytest.raises(RuntimeError):
+            fake_ctx.fire_idle_task("dream")
+    assert seen == [0, 1]

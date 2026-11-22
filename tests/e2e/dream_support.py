@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import math
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Optional, Sequence
 
@@ -152,16 +152,27 @@ class FakeLlm:
         scripted = self._queue.pop(0)
         usage = scripted["usage"] or PluginLlmUsage(input_tokens=10, output_tokens=5)
         if not usage.total_tokens:
-            usage.total_tokens = usage.input_tokens + usage.output_tokens
+            # Copy: never mutate an object the test passed in and may reuse.
+            usage = replace(usage, total_tokens=usage.input_tokens + usage.output_tokens)
         for name in ("input_tokens", "output_tokens", "total_tokens", "cache_read_tokens", "cache_write_tokens"):
             setattr(self.usage, name, getattr(self.usage, name) + getattr(usage, name))
         if usage.cost_usd is not None:
             self.usage.cost_usd = (self.usage.cost_usd or 0.0) + usage.cost_usd
-        parsed = scripted["parsed"] if (json_mode or json_schema is not None) else None
+        parsed, is_json = None, False
+        if json_mode or json_schema is not None:
+            parsed = scripted["parsed"]
+            is_json = parsed is not None
+            if not is_json:
+                # Like the real host, parse scripted raw text; text that is not JSON stays text.
+                try:
+                    parsed = json.loads(scripted["text"])
+                    is_json = True
+                except ValueError:
+                    parsed = None
         return PluginLlmStructuredResult(
             text=scripted["text"], provider=scripted["provider"], model=scripted["model"],
             agent_id=agent_id or "default", usage=usage, parsed=parsed,
-            content_type="json" if parsed is not None else "text",
+            content_type="json" if is_json else "text",
             audit={"plugin_id": self._plugin_id, "purpose": purpose or "", "profile": profile or "",
                    "schema_name": schema_name or "", "task": slot if slot.lower() != "auto" else ""},
         )
@@ -186,7 +197,6 @@ class FakePluginContext:
         self.idle_tasks: dict[str, IdleTaskSpec] = {}
         self.llm = FakeLlm(self.aux_tasks, plugin_id)
         self._runs: dict[str, tuple[Optional[datetime], int]] = {}
-        self._registered_at: dict[str, datetime] = {}
 
     def register_idle_task(
         self, name: str, fn: Callable[[IdleTaskRun], Optional[str]], *, interval_hours: float,
@@ -208,7 +218,6 @@ class FakePluginContext:
         spec = IdleTaskSpec(name, fn, interval, idle if idle >= 0 else 0.0, first_run)
         self.idle_tasks[name] = spec
         self._runs.pop(name, None)
-        self._registered_at[name] = self.clock.now()
         return spec
 
     def register_auxiliary_task(
@@ -236,6 +245,9 @@ class FakePluginContext:
         idle = spec.min_idle_hours * 3600 if idle_for_seconds is None else idle_for_seconds
         run = IdleTaskRun(name=name, idle_for_seconds=float(idle),
                           last_run_at=last.isoformat() if last else None, run_count=count)
-        result = spec.fn(run)
-        self._runs[name] = (self.clock.now(), count + 1)
-        return result
+        try:
+            return spec.fn(run)
+        finally:
+            # The real host records the run whether ``fn`` returns or raises. It logs the
+            # exception; this fake re-raises it so a failing task fails the test.
+            self._runs[name] = (self.clock.now(), count + 1)

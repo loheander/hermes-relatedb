@@ -19,10 +19,13 @@ The failure that matters most for Dream Mode (#33) is a successful run that sile
 - **Correction proposals.** The proposal schema gains `{"kind": "correction", "corrects": [fact id], "certainty": "clear" | "ambiguous", ...}`. It is applied only when each fact in `corrects` exists (`source_missing`), is open (`source_closed`) and is not already covered by an open fact with the same meaning (`already_covered`). A `clear` correction supersedes in the target's slot.
 - **Rollback.** `hermes relatedb-memory dream --rollback <run id>` closes every fact with that `runId` (setting `closedAt`) and removes the `CONFLICTS_WITH` edges it created. It reopens nothing it superseded and deletes nothing; originals stay as they were. The `(:DreamRun)` stays in history with `rolledBackAt` set.
 
+## Decided with the requester (#33)
+
+- An unresolved conflict keeps both versions visible and marked as unresolved. The normal correction path settles it. There is no `conflicts` or `resolve` CLI command in v1.
+
 ## Open questions
 
 - How recall presents an unresolved conflict beyond the word `conflict` (inline pairing, a separate section, a rank penalty), and how much room it takes of `k`.
-- Whether the user can resolve a conflict from the CLI (for example `conflicts` and `resolve <fact id>`), and whether resolving counts as an explicit correction.
 - Whether rollback should restore facts a rolled-back run superseded (this ADR says no: a run supersedes only through checked, rejectable proposals, and a restore could undo a later correction).
 - How "opposes" is decided for the explicit-wins rule: slot equality is deterministic, text opposition needs the embedding threshold of ADR-0008 or the model.
 - How "already covered" is decided: exact text, embedding similarity, or both.

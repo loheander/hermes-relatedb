@@ -1,7 +1,7 @@
 {
   "codec": "json",
-  "checkpoint_lsn": 1073,
-  "commit_ts": 1107,
+  "checkpoint_lsn": 1216,
+  "commit_ts": 1254,
   "query_engine": "in-memory",
   "write_engine": "local"
 }

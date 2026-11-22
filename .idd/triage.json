@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "updated": "2026-11-19T15:02:02Z",
+  "source": "/auto-pilot",
+  "analyzed_count": 3,
+  "issues": [
+    {
+      "number": 50,
+      "title": "Restrict on_memory_write to built-in targets and correct the #48 docs",
+      "type": null,
+      "priority": "P3",
+      "blocks": [
+        33,
+        51
+      ],
+      "blocked_by": [],
+      "status": "ready",
+      "stale_days": null,
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "affected_files": [
+        "relatedb_memory/provider.py",
+        "CHANGELOG.md",
+        "README.md",
+        "CONFIGURATION.md",
+        "config_schema.py",
+        "tests/test_builtin_memory_write.py",
+        "tests/e2e/features/session_hooks.feature",
+        "tests/e2e/test_e2e_session_hooks.py"
+      ],
+      "updated_at": "2026-11-19T14:54:13Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 51,
+      "title": "Steer the model to relatedb_remember for facts with a natural slot key",
+      "type": "feature",
+      "priority": "P2",
+      "blocks": [
+        33
+      ],
+      "blocked_by": [
+        50
+      ],
+      "status": "blocked",
+      "stale_days": null,
+      "labels": [
+        "enhancement"
+      ],
+      "affected_files": [
+        "relatedb_memory/provider.py",
+        "CHANGELOG.md",
+        "tests/e2e/test_e2e_agent_tools.py",
+        "tests/e2e/features/agent_tools.feature",
+        "skills/relatedb-memory/SKILL.md",
+        "README.md"
+      ],
+      "updated_at": "2026-11-19T14:54:14Z",
+      "potentially_fixed_by": null
+    },
+    {
+      "number": 33,
+      "title": "Feature request: integrated Dream Mode for provenance-aware memory consolidation",
+      "type": "feature",
+      "priority": "P3",
+      "blocks": [],
+      "blocked_by": [
+        50,
+        51
+      ],
+      "status": "unclear",
+      "stale_days": null,
+      "labels": [
+        "enhancement",
+        "question",
+        "blocked"
+      ],
+      "affected_files": [
+        "relatedb_memory/provider.py",
+        "relatedb_memory/store.py",
+        "relatedb_memory/dedupe.py",
+        "relatedb_memory/config.py",
+        "config_schema.py",
+        "CONFIGURATION.md",
+        "README.md"
+      ],
+      "updated_at": "2026-11-19T13:21:30Z",
+      "potentially_fixed_by": null
+    }
+  ],
+  "summary": {
+    "parallel_groups": [],
+    "stale_count": 0,
+    "stale_threshold_days": 7,
+    "potentially_fixed_count": 0,
+    "suggested_order": [
+      50,
+      51,
+      33
+    ],
+    "circular_deps": [],
+    "co_dependent": []
+  },
+  "history": [
+    {
+      "time": "2026-11-19T15:02:02Z",
+      "source": "/auto-pilot",
+      "changes": "Full re-triage (3 issues)"
+    }
+  ]
+}

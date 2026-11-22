@@ -31,7 +31,7 @@ ADR-0011, ADR-0012 and ADR-0013 are Proposed and not yet agreed; this ADR refers
 
 **Retirement.** A pattern is closed (its `closedAt` is set; it is never deleted) when (a) the pass reports that an explicit user statement contradicts it, and the code confirms the statement is a user-authored fact rather than a pattern or observation, or (b) its support, recomputed at the start of every pass without a model call, drops below the minimum because supporting observations were superseded. Closed patterns keep their `DERIVED_FROM` edges and stay readable through `relatedb_as_of`.
 
-**Own opt-in.** `dream_patterns` (`RELATEDB_DREAM_PATTERNS`) is separate from `dream`. With it off, no pattern task is registered and no pattern call is made, while observation extraction continues. Default: off, because a pattern is the most speculative output of Dream Mode.
+**Own opt-in.** `dream_patterns` (`RELATEDB_DREAM_PATTERNS`) is separate from `dream`. With it off, no pattern task is registered and no pattern call is made, while observation extraction continues. Default: off, because a pattern is the most speculative output of Dream Mode and costs extra model usage. Once Phase 2b ships, the existing plugin setup (`get_config_schema`) offers `dream_patterns` as an explicit choice, separate from `dream` (requested in #33).
 
 **Ranking in recall.** Patterns use the existing fact ranking and, like captured facts under ADR-0007, are capped to a share of `k` so they cannot crowd out deliberate facts. The scenarios do not fix the share.
 

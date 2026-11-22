@@ -90,3 +90,10 @@ Feature: Pattern inference across conversations (Dream Mode, Phase 2b)
     Then no pattern task is registered
     And the language model made no pattern call
     And the observation "Asks for the migration plan before any code" is recorded by the run
+
+  @pending_60
+  Scenario: Pattern inference is off by default and offered as an explicit choice in plugin setup
+    When the plugin setup fields are listed
+    Then the setup offers "dream_patterns" as a separate choice from "dream"
+    And the default of "dream_patterns" is off
+    And no pattern task is registered until the user turns it on

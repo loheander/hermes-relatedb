@@ -135,6 +135,31 @@ def dream_on(world):
     world.monkeypatch.setenv("RELATEDB_DREAM_PATTERNS", "1")
 
 
+@when("the plugin setup fields are listed")
+def setup_fields(world):
+    world.setup_fields = {f["key"]: f for f in RelateDBMemoryProvider().get_config_schema()}
+
+
+@then(parsers.parse('the setup offers "{key}" as a separate choice from "{other}"'))
+def setup_offers(world, key, other):
+    assert key in world.setup_fields and other in world.setup_fields and key != other
+
+
+@then(parsers.parse('the default of "{key}" is off'))
+def setup_default_off(world, key):
+    assert world.setup_fields[key]["default"] in (False, "false", "0", 0)
+
+
+@then("no pattern task is registered until the user turns it on")
+def no_pattern_task_by_default(world):
+    from relatedb_memory import dream
+
+    world.monkeypatch.delenv("RELATEDB_DREAM_PATTERNS", raising=False)
+    world.monkeypatch.setenv("RELATEDB_DREAM", "1")
+    dream.register(world.ctx)
+    assert not any("pattern" in key for key in world.ctx.aux_tasks)
+
+
 @given("pattern inference is turned off")
 def patterns_off(world):
     world.monkeypatch.setenv("RELATEDB_DREAM_PATTERNS", "0")

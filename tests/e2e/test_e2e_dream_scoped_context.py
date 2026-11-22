@@ -188,6 +188,11 @@ def fresh_session_asks(world, project, query):
     world.answers[project] = _provider(world, project=project).prefetch(query)
 
 
+@when(parsers.parse('a fresh session with no project asks "{query}"'))
+def fresh_session_without_project_asks(world, query):
+    world.answers[None] = _provider(world, project=None).prefetch(query)
+
+
 @when("the user approves that proposal")
 def when_approves(world):
     _approve_first(world)
@@ -220,6 +225,16 @@ def answer_contains(world, project, text):
 @then(parsers.parse('the answer in project "{project}" does not contain "{text}"'))
 def answer_lacks(world, project, text):
     assert text not in world.answers[project]
+
+
+@then(parsers.parse('the answer with no project contains "{text}"'))
+def answer_without_project_contains(world, text):
+    assert text in world.answers[None]
+
+
+@then(parsers.parse('the answer with no project does not contain "{text}"'))
+def answer_without_project_lacks(world, text):
+    assert text not in world.answers[None]
 
 
 @then(parsers.parse('no USER.md proposal mentions "{text}"'))

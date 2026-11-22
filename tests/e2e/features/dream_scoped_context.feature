@@ -13,6 +13,16 @@ Feature: Scoped decisions and fresh-session context (Dream Mode, Phase 2a)
     And the answer in project "project-b" does not contain "Billing uses PostgreSQL 16"
 
   @pending_59
+  Scenario: A session with no clear project gets no project decisions in automatic recall
+    Given a USER.md containing "Name: Lo"
+    And a Dream Mode run that recorded the decision "Billing uses PostgreSQL 16" in project "project-a"
+    And a Dream Mode run that observed the durable preference "Prefers concise answers without preamble"
+    And the user approves that proposal
+    When a fresh session with no project asks "Which database does billing use?"
+    Then the answer with no project does not contain "Billing uses PostgreSQL 16"
+    And the answer with no project contains "Prefers concise answers without preamble"
+
+  @pending_59
   Scenario: A project decision is never proposed for the user profile
     Given a Dream Mode run that recorded the decision "Billing uses PostgreSQL 16" in project "project-a"
     Then no USER.md proposal mentions "PostgreSQL"

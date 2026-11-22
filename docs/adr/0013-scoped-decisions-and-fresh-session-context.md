@@ -15,11 +15,11 @@ The scenarios in `tests/e2e/features/dream_scoped_context.feature` (tagged `@pen
 
 **Scope representation.** A scope is a short string such as `project-a`. Decisions are facts in the slot `dream/<scope>/<topic>`, so the existing bitemporal supersession (ADR-0001) gives "latest wins within a scope" and keeps the earlier decision readable through `relatedb_as_of`. Durable personal preferences have no scope and are never stored under `dream/`.
 
-**Scope detection.** The session declares its scope through metadata: `provider.initialize(..., project="<scope>")`. During a Dream Mode pass the model proposes a scope per observation (`null` for a personal preference), and the proposal is trusted in this phase: the model's scope is used as given. Validating it against session metadata is an open question.
+**Scope detection.** The session declares its scope through metadata: `provider.initialize(..., project="<scope>")`. There is no automatic project detection in v1: the plugin uses only project context Hermes already provides reliably. During a Dream Mode pass the model proposes a scope per observation (`null` for a personal preference), and the proposal is trusted in this phase: the model's scope is used as given. The requester asked for no automatic detection, so validating the proposal against session metadata, or dropping model-proposed scope in favour of metadata only, is the main open question below.
 
 **Bitemporal stamps.** Dream Mode derives `valid_from` and `recorded_at` of a decision from the source episode that the observation cites (here the newest episode not yet consolidated), never from the wall clock. A later decision in the same slot therefore closes the earlier one at its own `valid_from`, and `relatedb_as_of` answers "what held on 3 March". Re-reading an already consolidated episode produces no new fact.
 
-**Scope selection at recall.** `prefetch` for a session with a scope returns facts in that scope plus unscoped facts, and no facts from another scope. Dream Mode off leaves recall unchanged. A superseded decision must not appear in the recalled text: for facts in a `dream/` slot, `prefetch` omits the `replaces=<old text>` annotation that Phase 1 appends to a superseding fact (the earlier decision stays readable through `relatedb_as_of`). Facts outside `dream/` keep the Phase 1 format, so recall with Dream Mode off is unchanged.
+**Scope selection at recall.** `prefetch` for a session with a scope returns facts in that scope plus unscoped facts, and no facts from another scope. A session with no clear project scope sees only unscoped facts (decided with the requester in #33): project-specific decisions are left out of automatic recall. Dream Mode off leaves recall unchanged. A superseded decision must not appear in the recalled text: for facts in a `dream/` slot, `prefetch` omits the `replaces=<old text>` annotation that Phase 1 appends to a superseding fact (the earlier decision stays readable through `relatedb_as_of`). Facts outside `dream/` keep the Phase 1 format, so recall with Dream Mode off is unchanged.
 
 **Pass.** `dream.register(ctx, provider)` registers one idle task, `relatedb-dream`, which reads recent episodes, calls `ctx.llm.complete_structured` once and receives `{"observations": [{"scope", "kind", "topic", "text"}]}` with `kind` one of `decision` or `preference`. Decisions are written as scoped facts. Preferences become proposals.
 
@@ -31,11 +31,10 @@ The scenarios in `tests/e2e/features/dream_scoped_context.feature` (tagged `@pen
 
 ## Open questions
 
-- What does a session with no clear project scope see: only unscoped facts, or every scope ranked by similarity?
 - Can the user correct a scope after the fact (move a decision to another project), and through which surface (CLI, tool, or editing the proposal)?
 - Is `project=` metadata available from Hermes at `initialize`, or must scope be inferred from the working directory?
 - Should the default budget count characters or tokens?
-- Should the model's scope be validated against session metadata, and what counts as a known scope?
+- Should the model's scope be validated against session metadata, or replaced by it (the requester wants no automatic project detection in v1), and what counts as a known scope?
 - Are `USER.md` proposals deduplicated against facts already in `USER.md`, and by what comparison?
 
 ## Consequences

@@ -326,13 +326,22 @@ def five_types(world):
     assert sorted(row["kind"] for row in _observations(world)) == sorted(TYPES)
 
 
-@then("recalling the release shows each observation with its type")
+@then("recalling the release shows every observation it includes with its type")
 def recall_shows_types(world):
+    # ADR-0011 caps observations in a recall block at observation_share of k,
+    # so only some of the five can appear; each one shown must carry its own kind.
     block = _recall(world, "Ship the release on Friday")
+    shown = 0
     for row in _observations(world):
         line = next((ln for ln in block.splitlines() if row["text"] in ln), None)
-        assert line is not None, f"{row['text']!r} missing from recall:\n{block}"
-        assert f"kind={row['kind']}" in line
+        if line is None:
+            continue
+        shown += 1
+        assert f"kind={row['kind']}" in line, f"{row['text']!r} lacks kind={row['kind']}:\n{line}"
+        for other in TYPES:
+            if other != row["kind"]:
+                assert f"kind={other}" not in line, f"{row['text']!r} shows wrong kind={other}:\n{line}"
+    assert shown >= 1, f"no observation in recall:\n{block}"
 
 
 @then("the statement is attributed to the user and the interpretation to the assistant")

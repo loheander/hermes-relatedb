@@ -11,7 +11,7 @@ Feature: Typed observation derivation from captured turns
     And the LLM will propose one observation of each type: statement, interpretation, question, assumption and decision
     When observations are derived
     Then five observations are stored, one of each type
-    And recalling the release shows each observation with its type
+    And recalling the release shows every observation it includes with its type
 
   @pending_57
   Scenario: A user statement and an assistant interpretation of it stay distinguishable

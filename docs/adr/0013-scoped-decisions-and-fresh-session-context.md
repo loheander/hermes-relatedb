@@ -19,7 +19,7 @@ The scenarios in `tests/e2e/features/dream_scoped_context.feature` (tagged `@pen
 
 **Bitemporal stamps.** Dream Mode derives `valid_from` and `recorded_at` of a decision from the source episode that the observation cites (here the newest episode not yet consolidated), never from the wall clock. A later decision in the same slot therefore closes the earlier one at its own `valid_from`, and `relatedb_as_of` answers "what held on 3 March". Re-reading an already consolidated episode produces no new fact.
 
-**Scope selection at recall.** `prefetch` for a session with a scope returns facts in that scope plus unscoped facts, and no facts from another scope. Dream Mode off leaves recall unchanged.
+**Scope selection at recall.** `prefetch` for a session with a scope returns facts in that scope plus unscoped facts, and no facts from another scope. Dream Mode off leaves recall unchanged. A superseded decision must not appear in the recalled text: for facts in a `dream/` slot, `prefetch` omits the `replaces=<old text>` annotation that Phase 1 appends to a superseding fact (the earlier decision stays readable through `relatedb_as_of`). Facts outside `dream/` keep the Phase 1 format, so recall with Dream Mode off is unchanged.
 
 **Pass.** `dream.register(ctx, provider)` registers one idle task, `relatedb-dream`, which reads recent episodes, calls `ctx.llm.complete_structured` once and receives `{"observations": [{"scope", "kind", "topic", "text"}]}` with `kind` one of `decision` or `preference`. Decisions are written as scoped facts. Preferences become proposals.
 
@@ -42,4 +42,5 @@ The scenarios in `tests/e2e/features/dream_scoped_context.feature` (tagged `@pen
 
 - Reuses bitemporal slots instead of a new schema, so history and audit come for free.
 - The scenarios pin seam names (`dream.register`, `dream_proposals`, `approve_dream_proposal`, `dream_context`, `project=`); if review changes them, the step module changes with them.
+- Recall formatting changes only for `dream/` facts (no `replaces=` annotation); the scenarios 'latest decision' and 'fresh session' assert the superseded text is absent from the whole recalled block.
 - Unresolved scope detection means early implementations may need an explicit `project=` and fall back to unscoped recall.

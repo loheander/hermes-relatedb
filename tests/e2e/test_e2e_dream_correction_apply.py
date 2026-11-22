@@ -20,7 +20,8 @@ context). It pins this contract, which the implementing story must provide::
            "clear" | "ambiguous", "slot" (ambiguous only), "source_episodes"}]}
 
     graph: ``(:DreamRun)`` nodes with ``id``, ``startedAt``, ``outcome``,
-    ``applied`` and ``rejected`` (JSON lists; each rejected entry is
+    ``applied`` and ``rejected`` (JSON lists; each applied entry is
+    ``{"proposal": {...}, "fact_id": <id>}``, each rejected entry is
     ``{"proposal": {...}, "reason": <code>}``) and ``rolledBackAt`` (null
     until rolled back); derived facts carry ``origin`` ``dream`` and
     ``runId``; rejection reason codes: ``contradicts_explicit_correction``,
@@ -138,7 +139,23 @@ def _dream_counting_opens(world, monkeypatch):
         world.opens += 1
         return real_open(cls, *args, **kwargs)
 
+    real_init = RelateStore.__init__
+
+    def counting_init(self, *args, **kwargs):
+        world.opens += 1
+        return real_init(self, *args, **kwargs)
+
+    import relate
+
+    real_connect = relate.connect
+
+    def counting_connect(*args, **kwargs):
+        world.opens += 1
+        return real_connect(*args, **kwargs)
+
     monkeypatch.setattr(RelateStore, "open", classmethod(counting_open))
+    monkeypatch.setattr(RelateStore, "__init__", counting_init)
+    monkeypatch.setattr(relate, "connect", counting_connect)
     _dream(world)
 
 
@@ -396,7 +413,7 @@ def correction_preserved(world):
 @then("the language proposal is applied")
 def language_applied(world):
     assert _fact(world, "Alpha is written in Python.")["closed"] is None
-    assert any(a.get("text") == "Alpha is written in Python." for a in _latest_run(world)["applied"])
+    assert any(a["proposal"].get("text") == "Alpha is written in Python." for a in _latest_run(world)["applied"])
 
 
 @then("the database proposal is not applied over the correction")

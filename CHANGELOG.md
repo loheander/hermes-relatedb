@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Shared Dream Mode e2e harness in `tests/e2e/dream_support.py`: a fake Hermes plugin context (scripted `ctx.llm.complete_structured`, idle-task and auxiliary-task registries, injectable clock) checked against Hermes v0.23.2, plus a generic `@pending_<n>` strict-xfail rule in `tests/e2e/conftest.py`. Test-only; no plugin behavior changes (#54).
+
 ## [1.3.0] - 2026-11-20
 
 ### Changed

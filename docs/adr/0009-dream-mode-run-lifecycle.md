@@ -25,7 +25,7 @@ Dream Mode (#33) consolidates captured episodes into reviewed facts and profile 
 4. Validate each proposal. Valid ones are applied (unless dry run), invalid ones are rejected and recorded.
 5. Publish all applied changes and advance the checkpoint in one write, then record the `DreamRun`. A failure before that write publishes nothing and leaves the checkpoint where it was; the run is recorded `failed` with the error.
 
-The idle task and the manual command share this lifecycle. The manual command `hermes relatedb dream` ignores idle state; `--dry-run` runs steps 1 to 4 and records the run but applies nothing and does not move the checkpoint; `--status` reads only.
+The idle task and the manual command share this lifecycle. The manual command `hermes relatedb dream` ignores idle state; `--dry-run` runs steps 1 to 4, which includes the model call, and records the run but applies nothing and does not move the checkpoint. Its output warns that the call can incur charges. A user who wants no call at all uses `--status`; `--status` reads only.
 
 ### Apply checkpoint
 

@@ -350,6 +350,12 @@ def latest_run_completed(world):
     assert _latest_run(world)["outcome"] == "completed"
 
 
+@then("the command output warns that the model call can incur charges")
+def output_warns_charges(world, capsys):
+    out = (capsys.readouterr().out).lower()
+    assert "charge" in out or "cost" in out
+
+
 @then(parsers.parse("the latest Dream run is recorded as a dry run with {count:d} proposals"))
 def latest_run_dry(world, count):
     run = _latest_run(world)

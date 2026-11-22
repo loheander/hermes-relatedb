@@ -49,6 +49,7 @@ Feature: Dream Mode run lifecycle, opt-in and inspectability
     And the LLM will propose one fact and one profile change
     When "hermes relatedb dream --dry-run" is run
     Then the command exits 0
+    And the command output warns that the model call can incur charges
     And the latest Dream run is recorded as a dry run with 2 proposals
     And no fact is stored
     And no profile proposal is stored

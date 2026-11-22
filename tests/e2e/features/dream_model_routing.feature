@@ -55,7 +55,7 @@ Feature: Dream Mode model routing and transparency
 
     Examples:
       | provider     | model       |
-      | dream-cloud | dream-small |
+      | dream-cloud  | dream-small |
       | local-ollama | qwen3-8b |
 
   @pending_56

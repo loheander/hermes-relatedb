@@ -59,12 +59,32 @@ Feature: Dream Mode model routing and transparency
       | local-ollama | qwen3-8b |
 
   @pending_56
-  Scenario: A dry run shows the resolved provider and model and sends nothing
+  Scenario: A dry run calls the model, shows where excerpts go, and warns about cost
     Given the consolidation slot resolves to model "dream-small" from provider "dream-cloud"
+    And the model returns one valid proposal
     When Dream Mode runs with --dry-run
     Then the run succeeds
     And the output names the consolidation slot, provider "dream-cloud" and model "dream-small"
+    And the output warns that the model call can incur charges
+    And exactly 1 model call was made
+    And every model call went through the consolidation slot
+    And the store has no consolidation proposals
+
+  @pending_56
+  Scenario: A dry run with no model chosen is refused and calls nothing
+    Given the consolidation slot has no provider or model chosen
+    When Dream Mode runs with --dry-run
+    Then the run is refused with a message naming the consolidation slot and how to set it
     And exactly 0 model calls were made
+
+  @pending_56
+  Scenario: A run stops when Hermes cannot guarantee that no fallback is used
+    Given the consolidation slot resolves to model "dream-small" from provider "dream-cloud"
+    And a fallback model is configured for the consolidation slot
+    When Dream Mode runs
+    Then the run is refused with a warning that a fallback cannot be excluded for the consolidation slot
+    And exactly 0 model calls were made
+    And the store has no consolidation proposals
 
   @pending_56
   Scenario: Status shows the resolved provider and model and sends nothing

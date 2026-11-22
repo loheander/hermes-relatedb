@@ -12,7 +12,7 @@ ADR-0010, open to review together with the feature file)::
         ``ctx.register_auxiliary_task``
     cli.main(argv, ctx=ctx) -> int
       - dream [--path <store>] [--limit N] [--timeout SECONDS] [--retries N]
-      - dream --dry-run [--path <store>]
+      - dream --dry-run [--path <store>]   (calls the model; applies nothing)
       - dream --status [--path <store>]
       ``ctx`` is the Hermes plugin context; Dream calls go through
       ``ctx.llm.complete_structured(..., task="relatedb_consolidation")``.
@@ -20,7 +20,8 @@ ADR-0010, open to review together with the feature file)::
 Simulation notes. The fake context does not model the user's Hermes config, so
 "the slot resolves to a model" is simulated by writing ``provider`` and
 ``model`` into the registered task's ``defaults``; an unset slot has empty
-defaults. The batch is the ``--limit`` oldest episodes. Episodes are sent as
+defaults. A configured fallback is simulated by writing a ``fallback`` entry
+into the same ``defaults`` (the real source is open question 2 of ADR-0010). The batch is the ``--limit`` oldest episodes. Episodes are sent as
 ``input`` items that are mappings with ``id`` and ``text`` keys.
 """
 
@@ -144,6 +145,11 @@ def slot_resolves(world, model, provider):
     world.ctx.aux_tasks[SLOT]["defaults"].update(provider=provider, model=model)
 
 
+@given("a fallback model is configured for the consolidation slot")
+def slot_has_fallback(world):
+    world.ctx.aux_tasks[SLOT]["defaults"]["fallback"] = {"provider": "fallback-cloud", "model": "fallback-paid"}
+
+
 @given("the consolidation slot has no provider or model chosen")
 def slot_unset(world):
     world.ctx.aux_tasks[SLOT]["defaults"].clear()
@@ -213,6 +219,19 @@ def run_succeeds(world):
 @then("the run fails")
 def run_fails(world):
     assert world.exit_code not in (None, 0)
+
+
+@then("the run is refused with a warning that a fallback cannot be excluded for the consolidation slot")
+def run_refused_for_fallback(world):
+    assert world.exit_code not in (None, 0)
+    output = (world.stdout + world.stderr).lower()
+    assert SLOT in output and "fallback" in output
+
+
+@then("the output warns that the model call can incur charges")
+def output_warns_charges(world):
+    output = world.stdout.lower()
+    assert "charge" in output or "cost" in output
 
 
 @then("the run is refused with a message naming the consolidation slot and how to set it")

@@ -119,6 +119,7 @@ def plugin_registered(world):
 @given("a memory store with these episodes, oldest first:")
 def store_with_episodes(world, datatable):
     rows = datatable[1:]
+    world.episode_texts = {episode_id: text for episode_id, text in rows}
     with _store(world) as store:
         for index, (episode_id, text) in enumerate(rows):
             store.record_episode(
@@ -285,14 +286,14 @@ def model_received_batch(world, first, second):
         for item in call.input
         if isinstance(item, dict) and "text" in item
     }
-    assert {"I moved the Lund office to Malmo.", "Please call me Ada from now on."} <= texts
+    assert {world.episode_texts[first], world.episode_texts[second]} <= texts
     assert all(isinstance(item, dict) and {"id", "text"} <= set(item) for call in world.ctx.llm.calls for item in call.input)
 
 
 @then(parsers.parse('the model did not receive the text of "{episode_id}"'))
 def model_missed_episode(world, episode_id):
     assert world.ctx.llm.calls
-    assert all("staging database" not in _all_text(call) for call in world.ctx.llm.calls)
+    assert all(world.episode_texts[episode_id] not in _all_text(call) for call in world.ctx.llm.calls)
 
 
 @then("the instructions to the model contain no episode text")
